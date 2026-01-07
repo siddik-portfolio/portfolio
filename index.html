@@ -62,6 +62,7 @@
             animation: fadeInUp 1s ease-out 0.3s backwards;
         }
 
+        /* ৪. প্রিমিয়াম বাটন ডিজাইন */
         .cta-btn { 
             background: linear-gradient(45deg, #4CAF50, #2E7D32); 
             color: white; 
@@ -78,39 +79,46 @@
         }
         .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(46, 125, 50, 0.4); filter: brightness(1.1); }
 
-        /* ৪. পুরাতন কোডের অন্যান্য সেকশন (About, Services, Tools) */
+        /* ৫. প্রজেক্ট ডিটেইলস (পুরাতন কোড থেকে) */
         .about-section { padding: 80px 20px; text-align: center; background: #fff; }
-        .section-title { font-size: 32px; color: #2E7D32; margin-bottom: 20px; font-weight: bold; }
+        .section-title { font-size: clamp(26px, 4vw, 32px); color: #2E7D32; margin-bottom: 20px; font-weight: bold; }
         .about-desc { font-size: 16px; color: #555; line-height: 1.8; max-width: 800px; margin: 0 auto; }
 
+        /* ৬. সার্ভিসসমূহ (পুরাতন কোড থেকে) */
         .services-section { padding: 60px 20px; background: #f9f9f9; text-align: center; }
         .services-grid { display: flex; flex-direction: column; gap: 20px; max-width: 700px; margin: 30px auto 0; }
         .service-card { background: white; padding: 25px; border-radius: 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-left: 5px solid #4CAF50; cursor: pointer; text-align: left; transition: 0.3s; }
-        .service-card:hover { transform: scale(1.02); }
+        .service-card:hover { transform: scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
         .s-icon { width: 60px; height: 60px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #2E7D32; flex-shrink: 0; }
         .s-info h3 { font-size: 20px; margin-bottom: 5px; color: #333; }
+        .s-info p { font-size: 14px; color: #666; }
 
+        /* ৭. ফ্রি টুলস (পুরাতন কোড থেকে) */
         .tools-section { padding: 80px 20px; text-align: center; background: #fff; }
         .tools-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 30px; }
         .tool-box { background: #f1f8e9; padding: 25px; border-radius: 15px; width: 30%; min-width: 120px; max-width: 150px; text-align: center; cursor: pointer; text-decoration: none; color: #333; border: 1px solid #c8e6c9; transition: 0.3s; }
         .tool-box:hover { background: #c8e6c9; transform: translateY(-5px); }
         .tool-icon { font-size: 30px; color: #2E7D32; margin-bottom: 10px; }
+        .tool-text { font-weight: bold; font-size: 14px; }
 
-        /* ৫. মডাল এবং এরর স্টাইল */
+        /* ৮. মডাল এবং এরর স্টাইল */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 5000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .modal-box { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #aaa; cursor: pointer; }
         .tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 15px; }
         .tab { flex: 1; padding: 12px; cursor: pointer; text-align: center; color: #888; font-weight: bold; transition: 0.3s; }
         .tab.active { color: #2E7D32; border-bottom: 3px solid #2E7D32; }
-        input { width: 100%; padding: 14px; margin-top: 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 10px; outline: none; }
-        .btn-full { width: 100%; padding: 14px; background: #4CAF50; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        input { width: 100%; padding: 14px; margin-top: 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 10px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #4CAF50; background: #fff; }
+        .btn-full { width: 100%; padding: 14px; background: #4CAF50; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
         .google-btn { background: #fff; color: #555; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
         .hidden { display: none; }
-        .error-msg { color: #d32f2f; font-size: 12px; margin-top: 4px; text-align: left; display: none; }
+        .error-msg { color: #d32f2f; font-size: 12px; margin-top: 4px; text-align: left; display: none; padding-left: 5px; }
         input.input-error { border: 1px solid #d32f2f; background: #fff8f8; }
+
         .footer { background: #111; color: #777; text-align: center; padding: 40px; font-size: 14px; }
 
+        /* অ্যানিমেশনস */
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -128,30 +136,41 @@
     </section>
 
     <section class="about-section">
-        <h2 class="section-title">আমাদের সম্পর্কে</h2>
-        <p class="about-desc">আমরা কৃষকদের আধুনিক প্রযুক্তির সাথে যুক্ত করতে কাজ করছি। আমাদের লক্ষ্য হলো কৃষিকে আরও সহজ এবং লাভজনক করে তোলা।</p>
+        <h2 class="section-title">আমাদের প্রজেক্ট সম্পর্কে</h2>
+        <p class="about-desc">
+            Smart Agri Pro একটি ডিজিটাল কৃষি প্ল্যাটফর্ম যা আধুনিক প্রযুক্তির মাধ্যমে কৃষিকাজকে সহজতর করে।
+        </p>
     </section>
 
     <section class="services-section">
-        <h2 class="section-title">আমাদের সেবাসমূহ</h2>
+        <h2 class="section-title">সার্ভিসসমূহ</h2>
         <div class="services-grid">
-            <div class="service-card">
-                <div class="s-icon"><i class="fas fa-microchip"></i></div>
-                <div class="s-info"><h3>মাটি পরীক্ষা</h3><p>মাটির গুণাগুণ এবং সঠিক সার ব্যবহারের পরামর্শ।</p></div>
+            <div class="service-card" onclick="showLoginModal()">
+                <div class="s-icon"><i class="fas fa-plane-departure"></i></div>
+                <div class="s-info"><h3>ড্রোন স্প্রে</h3><p>নিখুঁতভাবে সার বা কীটনাশক স্প্রে করুন।</p></div>
             </div>
-            <div class="service-card">
-                <div class="s-icon"><i class="fas fa-cloud-sun"></i></div>
-                <div class="s-info"><h3>আবহাওয়ার পূর্বাভাস</h3><p>আপনার এলাকার সঠিক আবহাওয়ার তথ্য জানুন।</p></div>
+            <div class="service-card" onclick="showLoginModal()">
+                <div class="s-icon"><i class="fas fa-tractor"></i></div>
+                <div class="s-info"><h3>অটো হারভেস্ট</h3><p>মেশিন দিয়ে দ্রুত ফসল কাটার সুবিধা।</p></div>
             </div>
         </div>
     </section>
 
     <section class="tools-section">
-        <h2 class="section-title">কৃষি টুলস</h2>
+        <h2 class="section-title">ফ্রি টুলস</h2>
         <div class="tools-container">
-            <div class="tool-box"><div class="tool-icon"><i class="fas fa-calculator"></i></div><div class="tool-text">লাভ ক্যালকুলেটর</div></div>
-            <div class="tool-box"><div class="tool-icon"><i class="fas fa-bug"></i></div><div class="tool-text">পোকা দমন</div></div>
-            <div class="tool-box"><div class="tool-icon"><i class="fas fa-tint"></i></div><div class="tool-text">সেচ ব্যবস্থাপনা</div></div>
+            <a href="map.html?mode=measure" class="tool-box">
+                <div class="tool-icon"><i class="fas fa-ruler-combined"></i></div>
+                <div class="tool-text">জমি মাপুন</div>
+            </a>
+            <a href="map.html?mode=scan" class="tool-box">
+                <div class="tool-icon"><i class="fas fa-satellite"></i></div>
+                <div class="tool-text">জমি স্ক্যানার</div>
+            </a>
+            <a href="scanner.html" class="tool-box">
+                <div class="tool-icon"><i class="fas fa-search-plus"></i></div>
+                <div class="tool-text">রোগ নির্ণয়</div>
+            </a>
         </div>
     </section>
 
@@ -162,6 +181,7 @@
                 <div class="tab active" onclick="switchTab('login')" id="tab-login">লগইন</div>
                 <div class="tab" onclick="switchTab('register')" id="tab-register">রেজিস্ট্রেশন</div>
             </div>
+
             <div id="view-login">
                 <input type="email" id="login-email" placeholder="ইমেইল এড্রেস">
                 <div id="login-email-error" class="error-msg"></div>
@@ -169,12 +189,13 @@
                 <div id="login-pass-error" class="error-msg"></div>
                 <button class="btn-full" id="btn-login-submit">লগইন করুন</button>
                 <button class="btn-full google-btn" id="btn-google">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google"> Google দিয়ে প্রবেশ করুন
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18"> Google দিয়ে প্রবেশ করুন
                 </button>
             </div>
+
             <div id="view-register" class="hidden">
                 <input type="text" id="reg-fullname" placeholder="পুরো নাম">
-                <input type="tel" id="reg-phone" placeholder="মোাবাইল নাম্বার">
+                <input type="tel" id="reg-phone" placeholder="মোবাইল নাম্বার">
                 <input type="email" id="reg-email" placeholder="ইমেইল">
                 <div id="reg-email-error" class="error-msg"></div>
                 <input type="password" id="reg-password" placeholder="পাসওয়ার্ড">
@@ -184,7 +205,9 @@
         </div>
     </div>
 
-    <footer class="footer">© 2026 Smart Agri Pro. All Rights Reserved.</footer>
+    <footer class="footer">
+        <p>&copy; 2026 Smart Agri Pro. All Rights Reserved.</p>
+    </footer>
 
     <script>
         function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
@@ -201,8 +224,77 @@
     </script>
 
     <script type="module">
-        // এখানে আপনার Firebase কনফিগ এবং ইভেন্ট লিসেনারগুলো (যেমন: btn-login-submit.onclick) আগের মতো থাকবে।
-        // আপনার পুরাতন কোডের স্ক্রিপ্ট অংশটি এখানে হুবহু পেস্ট করে দিন।
+        // (পুরাতন কোডের Firebase ইম্পোর্ট এবং লজিক হুবহু এখানে রাখা হয়েছে)
+        import { auth, db } from './firebase-config.js';
+        import { 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            GoogleAuthProvider, 
+            signInWithPopup 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const showError = (elementId, inputId, message) => {
+            const errEl = document.getElementById(elementId);
+            const inputEl = document.getElementById(inputId);
+            errEl.innerText = message;
+            errEl.style.display = 'block';
+            inputEl.classList.add('input-error');
+        };
+
+        const resetErrors = () => {
+            document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('input').forEach(el => el.classList.remove('input-error'));
+        };
+
+        document.getElementById('btn-register-submit').onclick = async () => {
+            resetErrors();
+            const name = document.getElementById('reg-fullname').value;
+            const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-password').value;
+            if(!email || !pass || !name) { alert("সবগুলো ঘর পূরণ করুন"); return; }
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+                await setDoc(doc(db, "users", user.uid), { fullName: name, phone: phone, email: email, uid: user.uid });
+                window.location.href = 'Dashboard.html';
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    showError('reg-email-error', 'reg-email', 'এই ইমেইলটি ইতিমধ্যে ব্যবহার করা হয়েছে।');
+                } else if (error.code === 'auth/weak-password') {
+                    showError('reg-pass-error', 'reg-password', 'পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।');
+                } else {
+                    alert("ভুল হয়েছে: " + error.message);
+                }
+            }
+        };
+
+        document.getElementById('btn-login-submit').onclick = async () => {
+            resetErrors();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.location.href = 'Dashboard.html';
+            } catch (error) {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    showError('login-email-error', 'login-email', 'ইমেইল বা পাসওয়ার্ড সঠিক নয়।');
+                } else {
+                    alert("লগইন ব্যর্থ: " + error.message);
+                }
+            }
+        };
+
+        document.getElementById('btn-google').onclick = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                window.location.href = 'Dashboard.html';
+            } catch (error) {
+                alert("গুগল লগইন ব্যর্থ হয়েছে");
+            }
+        };
     </script>
 </body>
 </html>
