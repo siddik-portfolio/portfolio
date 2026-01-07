@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Map - Agri Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        .top-btn { position: absolute; top: 20px; left: 20px; background: white; padding: 10px 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; text-decoration: none; color: #333; display: flex; align-items: center; gap: 5px; }
+        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 1000; }
+        .btn-action { background: white; border: none; padding: 15px 20px; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .btn-add { background: #4CAF50; color: white; } 
+        .btn-undo { background: white; color: #f44336; } 
+        .btn-done { background: #2196F3; color: white; display: none; }
+        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 900; pointer-events: none; color: white; font-size: 30px; text-shadow: 0 0 5px black; }
+        #result-box { position: absolute; bottom: 0; left: 0; width: 100%; background: white; padding: 25px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 2000; transform: translateY(100%); transition: 0.3s; }
+        #result-box.active { transform: translateY(0); }
+        .result-title { font-size: 18px; font-weight: bold; color: #2E7D32; margin-bottom: 5px; }
+        .result-val { font-size: 24px; color: #333; font-weight: bold; margin-bottom: 15px; }
+        .btn-save { width: 100%; padding: 15px; background: #2E7D32; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-close { width: 100%; padding: 12px; background: #f5f5f5; color: #555; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .gps-btn { position: absolute; bottom: 120px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div class="crosshair" id="crosshair-target"><i class="fas fa-plus-circle"></i></div>
+    
+    <a href="Dashboard.html" class="top-btn"><i class="fas fa-arrow-left"></i> ফিরে যান</a>
+    <div class="gps-btn" onclick="locateUser()"><i class="fas fa-crosshairs"></i></div>
+
+    <div class="controls" id="control-bar">
+        <button class="btn-action btn-undo" id="undo-btn"><i class="fas fa-undo"></i></button>
+        <button class="btn-action btn-add" id="add-btn">পয়েন্ট +</button>
+        <button class="btn-action btn-done" id="done-btn">শেষ</button>
+    </div>
+
+    <div id="result-box">
+        <h3 class="result-title" id="res-title">ফলাফল</h3>
+        <div class="result-val" id="res-value">...</div>
+        <p id="res-desc" style="color:#666; font-size:14px; margin-bottom:15px;">...</p>
+        <button class="btn-save" id="save-btn">প্রোফাইলে সেভ করুন</button>
+        <button class="btn-close" id="reset-btn">আবার মাপুন</button>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        var map, points = [], markers = [], polygonLayer;
+        var mode = "measure";
+        var currentArea = 0;
+        var currentUser = null;
+
+        // ১. ইনিশিয়ালাইজেশন
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            initMap();
+            
+            const params = new URLSearchParams(window.location.search);
+            mode = params.get('mode') || 'measure';
+            const landId = params.get('landId');
+
+            if (mode === 'view' && landId) {
+                loadLandFromFirebase(landId);
+            }
+        });
+
+        function initMap() {
+            if (map) return;
+            map = L.map('map', { zoomControl: false }).setView([23.8103, 90.4125], 15);
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 20, attribution: 'Google'
+            }).addTo(map);
+            L.Control.geocoder().addTo(map);
+        }
+
+        // ২. Firebase থেকে ভিউ মোডে ডেটা লোড
+        async function loadLandFromFirebase(id) {
+            const docRef = doc(db, "lands", id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const land = docSnap.data();
+                document.getElementById('control-bar').style.display = 'none';
+                document.getElementById('crosshair-target').style.display = 'none';
+
+                points = land.points;
+                polygonLayer = L.polygon(points, { color: '#39FF14', weight: 4 }).addTo(map);
+                map.fitBounds(polygonLayer.getBounds(), { padding: [50, 50] });
+
+                document.getElementById('result-box').classList.add('active');
+                document.getElementById('res-title').innerText = land.name;
+                document.getElementById('res-value').innerText = land.area + " শতাংশ";
+                document.getElementById('res-desc').innerText = "তারিখ: " + land.date;
+                document.getElementById('save-btn').style.display = 'none';
+            }
+        }
+
+        // ৩. ড্রয়িং ফাংশনস
+        document.getElementById('add-btn').onclick = () => {
+            var center = map.getCenter();
+            points.push([center.lat, center.lng]);
+            var marker = L.circleMarker(center, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 5 }).addTo(map);
+            markers.push(marker);
+            updatePolygon();
+            if(points.length >= 3) document.getElementById('done-btn').style.display = 'flex';
+        };
+
+        document.getElementById('undo-btn').onclick = () => {
+            if(points.length > 0) {
+                points.pop();
+                map.removeLayer(markers.pop());
+                updatePolygon();
+                if(points.length < 3) document.getElementById('done-btn').style.display = 'none';
+            }
+        };
+
+        function updatePolygon() {
+            if(polygonLayer) map.removeLayer(polygonLayer);
+            if(points.length > 0) {
+                polygonLayer = L.polygon(points, { color: '#39FF14' }).addTo(map);
+            }
+        }
+
+        // ৪. শেষ বাটন (Calculation)
+        document.getElementById('done-btn').onclick = () => {
+            document.getElementById('control-bar').style.display = 'none';
+            document.getElementById('crosshair-target').style.display = 'none';
+
+            var tPoints = [...points, points[0]];
+            var polygon = turf.polygon([tPoints.map(p => [p[1], p[0]])]);
+            currentArea = (turf.area(polygon) / 40.4686).toFixed(2);
+
+            document.getElementById('result-box').classList.add('active');
+            document.getElementById('res-value').innerText = currentArea + " শতাংশ";
+
+            if (mode === 'add' || mode === 'measure') {
+                document.getElementById('res-title').innerText = "জমির পরিমাপ";
+                document.getElementById('res-desc').innerText = "এটি আপনার চিহ্নিত জমির আয়তন।";
+            }
+        };
+
+        // ৫. Firebase-এ সেভ করা (সবচেয়ে গুরুত্বপূর্ণ)
+        document.getElementById('save-btn').onclick = async () => {
+            if (!currentUser) {
+                alert("সেভ করতে লগইন করুন!");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const landName = prompt("জমির একটি নাম দিন:", "আমার জমি");
+                if (!landName) return;
+
+                const landData = {
+                    userId: currentUser.uid,
+                    name: landName,
+                    area: currentArea,
+                    points: points,
+                    date: new Date().toLocaleDateString()
+                };
+
+                await addDoc(collection(db, "lands"), landData);
+                alert("✅ Firebase-এ সেভ হয়েছে!");
+                window.location.href = 'Dashboard.html';
+            } catch (e) {
+                alert("Error saving: " + e.message);
+            }
+        };
+
+        document.getElementById('reset-btn').onclick = () => location.reload();
+        window.locateUser = () => map.locate({setView: true, maxZoom: 16});
+
+    </script>
+</body>
+</html>

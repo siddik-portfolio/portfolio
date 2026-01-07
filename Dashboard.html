@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Smart Agri Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f7f6; color: #333; padding-bottom: 30px; }
+        .header { background: #2E7D32; color: white; padding: 30px 20px; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .user-info h2 { font-size: 22px; margin-bottom: 5px; }
+        .btn-ai { background: linear-gradient(135deg, #1B5E20, #43A047); color: white; padding: 18px; border-radius: 15px; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 20px; font-weight: bold; box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
+        .section-title { padding: 0 20px; font-size: 18px; font-weight: bold; color: #2E7D32; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .add-land-btn { background: #fff; color: #2E7D32; padding: 8px 15px; border-radius: 10px; text-decoration: none; font-size: 14px; border: 1px solid #2E7D32; font-weight: bold; }
+        .land-container { padding: 20px; }
+        .land-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 6px solid #4CAF50; }
+        .land-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .land-meta { font-size: 13px; color: #777; margin-bottom: 15px; }
+        .service-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 15px; }
+        .s-btn { border: none; padding: 10px 5px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .btn-drone { background: #E8F5E9; color: #2E7D32; }
+        .btn-harvest { background: #FFF3E0; color: #E65100; }
+        .btn-pump { background: #E3F2FD; color: #1565C0; }
+        .empty-msg { text-align: center; padding: 50px 20px; color: #999; }
+        .logout-btn { background: #ffebee; color: #c62828; border: none; padding: 10px; border-radius: 50%; width: 40px; height: 40px; float: right; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+        <div class="user-info">
+            <h2 id="display-name">লোড হচ্ছে...</h2>
+            <p id="display-phone">অপেক্ষা করুন...</p>
+        </div>
+    </div>
+
+    <a href="scanner.html" class="btn-ai"><i class="fas fa-robot"></i> AI ফসলের রোগ নির্ণয় করুন</a>
+
+    <div class="section-title">
+        আপনার জমিসমূহ
+        <a href="map.html?mode=add" class="add-land-btn"><i class="fas fa-plus"></i> যোগ করুন</a>
+    </div>
+
+    <div class="land-container" id="land-list">
+        </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ১. লগইন স্ট্যাটাস এবং ইউজার ডেটা চেক
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    // Firestore থেকে ইউজারের নাম ও ফোন নাম্বার আনা
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        document.getElementById('display-name').innerText = "হ্যালো, " + (userData.fullName || "কৃষক বন্ধু") + "!";
+                        document.getElementById('display-phone').innerText = "মোবাইল: " + (userData.phone || "সেট করা নেই");
+                    } else {
+                        document.getElementById('display-name').innerText = "হ্যালো, " + (user.displayName || "কৃষক বন্ধু") + "!";
+                        document.getElementById('display-phone').innerText = user.email;
+                    }
+
+                    // জমিসমূহ লোড করা (Firebase থেকে)
+                    renderLands(user.uid);
+                } catch (error) {
+                    console.error("Error loading user profile:", error);
+                }
+            } else {
+                // লগইন করা না থাকলে হোম পেজে ফেরত পাঠানো
+                window.location.href = 'index.html';
+            }
+        });
+
+        // ২. Firebase থেকে জমির তালিকা রেন্ডার করা
+        async function renderLands(uid) {
+            const container = document.getElementById('land-list');
+            container.innerHTML = `<div class="empty-msg"><p>জমি লোড হচ্ছে...</p></div>`;
+
+            try {
+                // শুধু এই নির্দিষ্ট ইউজারের আইডি দিয়ে কুয়েরি করা
+                const q = query(collection(db, "lands"), where("userId", "==", uid));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = `<div class="empty-msg"><i class="fas fa-map-marked-alt fa-3x"></i><p><br>কোনো জমি পাওয়া যায়নি।</p></div>`;
+                    return;
+                }
+
+                let html = "";
+                querySnapshot.forEach((docSnap) => {
+                    const land = docSnap.data();
+                    const landId = docSnap.id; 
+                    html += `
+                        <div class="land-card">
+                            <div onclick="viewLandOnMap('${landId}')" style="cursor:pointer">
+                                <div class="land-name">${land.name || 'নামহীন জমি'}</div>
+                                <div class="land-meta">
+                                    <span><i class="fas fa-expand"></i> ${land.area || '0'} শতাংশ</span> | 
+                                    <span><i class="fas fa-eye"></i> ম্যাপে দেখুন</span>
+                                </div>
+                            </div>
+                            <div class="service-group">
+                                <button class="s-btn btn-drone" onclick="orderService('ড্রোন স্প্রে', '${land.name}')"><i class="fas fa-plane"></i>ড্রোন</button>
+                                <button class="s-btn btn-harvest" onclick="orderService('হারভেস্ট', '${land.name}')"><i class="fas fa-tractor"></i>কাটাই</button>
+                                <button class="s-btn btn-pump" onclick="orderService('স্মার্ট পাম্প', '${land.name}')"><i class="fas fa-water"></i>পাম্প</button>
+                            </div>
+                            <button onclick="deleteLand('${landId}')" style="background:none; border:none; color:#ffcdd2; font-size:11px; margin-top:10px; cursor:pointer;">মুছে ফেলুন</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Lands load korte somossya:", error);
+                container.innerHTML = `<div class="empty-msg"><p>ডেটা লোড করতে সমস্যা হয়েছে।</p></div>`;
+            }
+        }
+
+        // ৩. গ্লোবাল ফাংশনসমূহ (বাটন ক্লিকের জন্য)
+        window.logout = function() {
+            if(confirm("আপনি কি লগআউট করতে চান?")) {
+                signOut(auth).then(() => {
+                    window.location.href = 'index.html';
+                }).catch((error) => alert(error.message));
+            }
+        }
+
+        window.viewLandOnMap = function(landId) {
+            window.location.href = `map.html?mode=view&landId=${landId}`;
+        }
+
+        window.orderService = function(s, l) {
+            alert("✅ অর্ডার কনফার্ম!\nসার্ভিস: " + s + "\nজমি: " + l);
+        }
+
+        window.deleteLand = async function(landId) {
+            if(confirm("আপনি কি নিশ্চিতভাবে এই জমির তথ্য মুছে ফেলতে চান?")) {
+                try {
+                    await deleteDoc(doc(db, "lands", landId));
+                    alert("তথ্য মুছে ফেলা হয়েছে।");
+                    location.reload(); 
+                } catch (error) {
+                    alert("মুছে ফেলতে সমস্যা হয়েছে: " + error.message);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
