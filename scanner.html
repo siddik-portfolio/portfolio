@@ -10,17 +10,12 @@
         .scanner-box { background: white; max-width: 400px; margin: 20px auto; padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         #image-preview { width: 100%; height: 300px; background: #eee; border-radius: 15px; overflow: hidden; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; border: 2px solid #ddd; }
         canvas, img { width: 100%; height: 100%; object-fit: cover; }
-        
         .action-buttons { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
         .btn-action { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: 0.3s; }
-        
         .btn-camera { background: #4CAF50; color: white; }
         .btn-upload { background: #FF9800; color: white; }
         .btn-capture { background: #e91e63; color: white; display: none; width: 100%; margin-top: 10px; }
-        
-        .result-box { background: #e8f5e9; padding: 15px; border-radius: 10px; border: 1px solid #4CAF50; display: none; margin-top: 20px; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
+        .result-box { background: #e8f5e9; padding: 15px; border-radius: 10px; border: 1px solid #4CAF50; display: none; margin-top: 20px; }
         .disease-name { font-size: 20px; font-weight: bold; color: #c62828; }
         .loading-text { color: #FF9800; font-weight: bold; display: none; margin: 10px 0; }
     </style>
@@ -33,18 +28,13 @@
         <div id="image-preview">
             <i class="fas fa-leaf" id="placeholder-icon" style="font-size:50px; color:#ccc;"></i>
         </div>
-        
         <div class="action-buttons">
             <button class="btn-action btn-camera" onclick="initCamera()"><i class="fas fa-camera"></i> ক্যামেরা</button>
             <button class="btn-action btn-upload" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> গ্যালারি</button>
         </div>
-        
         <button id="capture-btn" class="btn-action btn-capture" onclick="captureImage()"><i class="fas fa-dot-circle"></i> ছবি তুলুন</button>
-        
         <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
-        
         <p id="status-msg" class="loading-text">প্রসেসিং...</p>
-        
         <div id="label-container" class="result-box"></div>
     </div>
 
@@ -52,11 +42,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        // আপনার সঠিক মডেল লিঙ্কটি এখানে বসান (লিঙ্ক শেষে / থাকতে হবে)
-        const URL = "https://teachablemachine.withgoogle.com/models/[...]"; 
-        
-        let model, webcam, maxPredictions;
-        let isPaused = false;
+        const URL = "https://teachablemachine.withgoogle.com/models/[...]"; // আপনার মডেল আইডি এখানে দিন
+        let model, webcam, maxPredictions, isPaused = false;
 
         async function loadModel() {
             if (!model) {
@@ -72,25 +59,19 @@
             status.style.display = "block";
             status.innerText = "মডেল লোড হচ্ছে...";
             isPaused = false;
-
             try {
                 await loadModel();
                 status.innerText = "ক্যামেরা চালু হচ্ছে...";
-                
                 webcam = new tmImage.Webcam(400, 400, false); 
                 await webcam.setup({ facingMode: "environment" }); 
                 await webcam.play();
-                
                 document.getElementById("image-preview").innerHTML = "";
                 document.getElementById("image-preview").appendChild(webcam.canvas);
-                document.getElementById("capture-btn").style.display = "flex"; 
-                document.getElementById("capture-btn").innerHTML = '<i class="fas fa-dot-circle"></i> ছবি তুলুন';
-                document.getElementById("capture-btn").onclick = captureImage;
-                
+                document.getElementById("capture-btn").style.display = "flex";
                 status.style.display = "none";
                 window.requestAnimationFrame(loop);
             } catch (e) {
-                alert("ক্যামেরা ব্যবহারের অনুমতি দিন অথবা ইন্টারনেট চেক করুন।");
+                alert("ক্যামেরা ব্যবহারে সমস্যা হচ্ছে।");
                 status.style.display = "none";
             }
         }
@@ -105,11 +86,11 @@
 
         async function captureImage() {
             if (webcam) {
-                isPaused = true; 
+                isPaused = true;
                 webcam.pause();
                 document.getElementById("capture-btn").innerHTML = '<i class="fas fa-sync"></i> আবার ট্রাই করুন';
                 document.getElementById("capture-btn").onclick = () => location.reload();
-                await predict(webcam.canvas); 
+                await predict(webcam.canvas);
             }
         }
 
@@ -120,46 +101,58 @@
             const status = document.getElementById('status-msg');
             status.style.display = "block";
             status.innerText = "বিশ্লেষণ হচ্ছে...";
-
-            const img = new Image();
-            img.src = window.URL.createObjectURL(file);
             
-            img.onload = async function() {
-                document.getElementById("image-preview").innerHTML = "";
-                document.getElementById("image-preview").appendChild(img);
-                document.getElementById("capture-btn").style.display = "none";
-                
-                await loadModel();
-                await predict(img);
-                status.style.display = "none";
-            }
+            // রেজাল্ট বক্সটি আগে হাইড করে রাখা
+            document.getElementById("label-container").style.display = "none";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = async function() {
+                    document.getElementById("image-preview").innerHTML = "";
+                    document.getElementById("image-preview").appendChild(img);
+                    document.getElementById("capture-btn").style.display = "none";
+                    
+                    await loadModel();
+                    // ছোট একটা ডিলয় দেওয়া যাতে ব্রাউজার ইমেজটি রেন্ডার করতে পারে
+                    setTimeout(async () => {
+                        await predict(img);
+                        status.style.display = "none";
+                    }, 500);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         async function predict(imageElement) {
-            // Teachable Machine standard prediction logic
-            const prediction = await model.predict(imageElement);
-            
-            let highestProb = 0;
-            let bestClass = "";
+            if (!model) return;
+            try {
+                const prediction = await model.predict(imageElement);
+                let highestProb = 0;
+                let bestClass = "";
 
-            for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > highestProb) {
-                    highestProb = prediction[i].probability;
-                    bestClass = prediction[i].className;
+                for (let i = 0; i < maxPredictions; i++) {
+                    if (prediction[i].probability > highestProb) {
+                        highestProb = prediction[i].probability;
+                        bestClass = prediction[i].className;
+                    }
                 }
-            }
 
-            const resBox = document.getElementById("label-container");
-            resBox.style.display = "block";
-            
-            if (highestProb > 0.20) { 
-                resBox.innerHTML = `
-                    <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
-                    <div class="disease-name">${bestClass}</div>
-                    <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
-                `;
-            } else {
-                resBox.innerHTML = "<div>কিছুই শনাক্ত করা যায়নি। আলোতে পরিষ্কার ছবি নিন।</div>";
+                const resBox = document.getElementById("label-container");
+                resBox.style.display = "block";
+                
+                if (highestProb > 0.15) { 
+                    resBox.innerHTML = `
+                        <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
+                        <div class="disease-name">${bestClass}</div>
+                        <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
+                    `;
+                } else {
+                    resBox.innerHTML = "<div>শনাক্ত করা সম্ভব হয়নি। পরিষ্কার ছবি নিন।</div>";
+                }
+            } catch (err) {
+                console.error("Prediction failed", err);
             }
         }
     </script>
