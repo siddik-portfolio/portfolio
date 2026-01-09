@@ -77,7 +77,6 @@
                     loadLandFromFirebase(landId);
                 }
             } else {
-                // ইউজার লগইন না থাকলে ইনডেক্সে পাঠাবে
                 window.location.href = 'index.html';
             }
         });
@@ -86,7 +85,6 @@
             if (map) return;
             map = L.map('map', { zoomControl: false }).setView([23.8103, 90.4125], 15);
             
-            // Google Hybrid Layer (Satelite + Labels)
             L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                 maxZoom: 20, attribution: 'Google'
             }).addTo(map);
@@ -94,7 +92,6 @@
             L.Control.geocoder().addTo(map);
         }
 
-        // ২. Firebase থেকে জমি লোড (ভিউ মোড)
         async function loadLandFromFirebase(id) {
             try {
                 const docRef = doc(db, "lands", id);
@@ -105,7 +102,8 @@
                     document.getElementById('control-bar').style.display = 'none';
                     document.getElementById('crosshair-target').style.display = 'none';
 
-                    points = land.points;
+                    // Firebase থেকে আসা অবজেক্ট ডেটাকে ম্যাপে দেখানোর জন্য অ্যারোতে রূপান্তর
+                    points = land.points.map(p => [p.lat, p.lng]);
                     polygonLayer = L.polygon(points, { color: '#39FF14', weight: 4 }).addTo(map);
                     map.fitBounds(polygonLayer.getBounds(), { padding: [50, 50] });
 
@@ -120,7 +118,6 @@
             }
         }
 
-        // ৩. পয়েন্ট যোগ করা
         document.getElementById('add-btn').onclick = () => {
             var center = map.getCenter();
             points.push([center.lat, center.lng]);
@@ -130,7 +127,6 @@
             if(points.length >= 3) document.getElementById('done-btn').style.display = 'flex';
         };
 
-        // ৪. পূর্বের পয়েন্ট মোছা
         document.getElementById('undo-btn').onclick = () => {
             if(points.length > 0) {
                 points.pop();
@@ -147,7 +143,6 @@
             }
         }
 
-        // ৫. এরিয়া ক্যালকুলেশন
         document.getElementById('done-btn').onclick = () => {
             if (points.length < 3) return;
             
@@ -156,25 +151,25 @@
 
             var tPoints = [...points, points[0]];
             var polygon = turf.polygon([tPoints.map(p => [p[1], p[0]])]);
-            currentArea = (turf.area(polygon) / 40.4686).toFixed(2); // বর্গমিটার থেকে শতাংশ
+            currentArea = (turf.area(polygon) / 40.4686).toFixed(2);
 
             document.getElementById('result-box').classList.add('active');
             document.getElementById('res-value').innerText = currentArea + " শতাংশ";
             document.getElementById('res-title').innerText = "পরিমাপ সম্পন্ন";
-            document.getElementById('res-desc').innerText = "চিহ্নিত এলাকার মোট আয়তন উপরে দেখা যাচ্ছে।";
+            document.getElementById('res-desc').innerText = "চিহ্নিত এলাকার মোট আয়তন উপরে দেখা যাচ্ছে।";
         };
 
-        // ৬. ফায়ারবেসে সেভ করার ফাংশন
+        // ৬. ফায়ারবেসে সেভ করার ফাংশন (FIXED)
         document.getElementById('save-btn').onclick = async () => {
             if (!currentUser) {
-                alert("লগইন সেশন পাওয়া যায়নি!");
+                alert("লগইন সেশন পাওয়া যায়নি!");
                 return;
             }
 
-            const landName = prompt("এই জমিটার একটি নাম দিন (যেমন: উত্তর মাঠ, বাড়ির পাশের জমি):", "আমার জমি");
+            const landName = prompt("এই জমিটার একটি নাম দিন (যেমন: উত্তর মাঠ, বাড়ির পাশের জমি):", "আমার জমি");
             
             if (landName === null || landName.trim() === "") {
-                alert("জমির নাম দেওয়া আবশ্যক!");
+                alert("জমির নাম দেওয়া আবশ্যক!");
                 return;
             }
 
@@ -183,33 +178,38 @@
                 btn.innerText = "সেভ হচ্ছে...";
                 btn.disabled = true;
 
+                // ফিক্স: Nested arrays এরর এড়াতে points কে অবজেক্টে রূপান্তর
+                const firebaseFriendlyPoints = points.map(p => ({
+                    lat: p[0],
+                    lng: p[1]
+                }));
+
                 await addDoc(collection(db, "lands"), {
                     userId: currentUser.uid,
                     name: landName,
                     area: currentArea,
-                    points: points,
-                    cropType: "নির্বাচন করুন", // ডিফল্ট ফসল
+                    points: firebaseFriendlyPoints, // রূপান্তরিত পয়েন্ট
+                    cropType: "নির্বাচন করুন",
                     date: new Date().toLocaleDateString('bn-BD'),
                     timestamp: new Date()
                 });
 
-                alert("✅ জমিটি আপনার প্রোফাইলে সফলভাবে যুক্ত হয়েছে!");
+                alert("✅ জমিটি আপনার প্রোফাইলে সফলভাবে যুক্ত হয়েছে!");
                 window.location.href = 'Dashboard.html';
             } catch (error) {
                 console.error("Save error:", error);
-                alert("সেভ করতে সমস্যা হয়েছে: " + error.message);
+                alert("সেভ করতে সমস্যা হয়েছে: " + error.message);
                 document.getElementById('save-btn').innerText = "প্রোফাইলে সেভ করুন";
                 document.getElementById('save-btn').disabled = false;
             }
         };
 
-        // ৭. ইউজার লোকেশন ও রিসেট
         document.getElementById('reset-btn').onclick = () => location.reload();
         window.locateUser = () => {
             map.locate({setView: true, maxZoom: 18});
         };
         
-        map.on('locationerror', () => alert("লোকেশন পাওয়া যায়নি। জিপিএস অন করুন।"));
+        map.on('locationerror', () => alert("লোকেশন পাওয়া যায়নি। জিপিএস অন করুন।"));
 
     </script>
 </body>
