@@ -31,6 +31,15 @@
         .btn-close { width: 100%; padding: 12px; background: #f5f5f5; color: #555; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .gps-btn { position: absolute; bottom: 120px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; }
 
+        /* Modern Input Modal */
+        #input-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4000; align-items: center; justify-content: center; }
+        .input-card { background: white; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
+        .input-card h3 { margin-bottom: 15px; color: #333; }
+        .input-card input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .input-btns { display: flex; gap: 10px; }
+        .btn-confirm { flex: 1; background: #2E7D32; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { flex: 1; background: #f5f5f5; color: #555; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
         /* Success Popup Style */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; text-align: center; position: relative; animation: popIn 0.3s ease-out; }
@@ -65,12 +74,23 @@
         <button class="btn-close" id="reset-btn">আবার মাপুন</button>
     </div>
 
+    <div id="input-modal">
+        <div class="input-card">
+            <h3>জমির নাম দিন</h3>
+            <input type="text" id="land-name-input" placeholder="উদা: উত্তর মাঠের জমি" value="আমার জমি">
+            <div class="input-btns">
+                <button class="btn-cancel" onclick="closeInputModal()">বাতিল</button>
+                <button class="btn-confirm" id="confirm-save-btn">সেভ নিশ্চিত করুন</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="success-modal">
         <div class="modal-card">
             <button class="modal-close-x" onclick="closeModal()"><i class="fas fa-times"></i></button>
             <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
-            <h2>সফলভাবে সেভ হয়েছে!</h2>
-            <p>আপনার জমিতি সফলভাবে প্রোফাইলে যুক্ত করা হয়েছে। এখনই ফসলের নাম সেট করতে চান?</p>
+            <h2>সফলভাবে সেভ হয়েছে!</h2>
+            <p>আপনার জমিতি সফলভাবে প্রোফাইলে যুক্ত করা হয়েছে। এখনই ফসলের নাম সেট করতে চান?</p>
             <div class="modal-btns">
                 <button class="modal-btn-go" onclick="goToProfile()">ফসলের নাম যোগ করুন</button>
                 <button class="btn-close" style="margin:0; background:#eee;" onclick="closeModal()">পরে করব</button>
@@ -80,16 +100,15 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, addDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         var map, points = [], markers = [], polygonLayer;
-        var mode = "measure";
         var currentArea = 0;
         var currentUser = null;
 
-        // গ্লোবাল ফাংশন
         window.closeModal = () => { document.getElementById('success-modal').style.display = 'none'; };
+        window.closeInputModal = () => { document.getElementById('input-modal').style.display = 'none'; };
         window.goToProfile = () => { window.location.href = 'Dashboard.html'; };
 
         onAuthStateChanged(auth, (user) => {
@@ -97,7 +116,7 @@
                 currentUser = user;
                 initMap();
                 const params = new URLSearchParams(window.location.search);
-                mode = params.get('mode') || 'measure';
+                const mode = params.get('mode') || 'measure';
                 const landId = params.get('landId');
                 if (mode === 'view' && landId) { loadLandFromFirebase(landId); }
             } else {
@@ -173,39 +192,48 @@
             document.getElementById('res-desc').innerText = "চিহ্নিত এলাকার মোট আয়তন উপরে দেখা যাচ্ছে।";
         };
 
-        // সেভ করার ফাংশন - FIXED
-        document.getElementById('save-btn').onclick = async () => {
+        // সেভ বাটন ক্লিক করলে ইনপুট মোডাল দেখাবে
+        document.getElementById('save-btn').onclick = () => {
             if (!currentUser) { alert("লগইন সেশন পাওয়া যায়নি!"); return; }
-            
-            const landName = prompt("এই জমিটার একটি নাম দিন (যেমন: উত্তর মাঠ, বাড়ির পাশের জমি):", "আমার জমি");
-            if (landName === null) return; // User cancelled
-            if (landName.trim() === "") { alert("জমির নাম দেওয়া আবশ্যক!"); return; }
+            document.getElementById('input-modal').style.display = 'flex';
+        };
 
-            const btn = document.getElementById('save-btn');
+        // মোডাল থেকে নিশ্চিত করলে ফাইনাল সেভ হবে
+        document.getElementById('confirm-save-btn').onclick = async () => {
+            const landName = document.getElementById('land-name-input').value.trim();
+            if (!landName) { alert("জমির নাম দিন!"); return; }
+
+            const btn = document.getElementById('confirm-save-btn');
+            const saveBtnUi = document.getElementById('save-btn');
+            
             try {
-                btn.innerText = "প্রসেসিং...";
+                btn.innerText = "সেভ হচ্ছে...";
                 btn.disabled = true;
 
-                const firebaseFriendlyPoints = points.map(p => ({ lat: p[0], lng: p[1] }));
+                // Firebase-এর জন্য ক্লিন ডেটা অবজেক্ট তৈরি (এরর এড়াতে)
+                const firebasePoints = points.map(p => ({
+                    lat: parseFloat(p[0]),
+                    lng: parseFloat(p[1])
+                }));
 
-                // Firebase Save operation
                 await addDoc(collection(db, "lands"), {
                     userId: currentUser.uid,
                     name: landName,
-                    area: currentArea,
-                    points: firebaseFriendlyPoints,
+                    area: parseFloat(currentArea),
+                    points: firebasePoints,
                     cropType: "নির্বাচন করুন",
                     date: new Date().toLocaleDateString('bn-BD'),
-                    timestamp: new Date()
+                    timestamp: serverTimestamp()
                 });
 
-                // Success
-                btn.innerText = "সফলভাবে সেভ হয়েছে";
+                closeInputModal();
+                saveBtnUi.innerText = "সফলভাবে সেভ হয়েছে ✅";
+                saveBtnUi.disabled = true;
                 document.getElementById('success-modal').style.display = 'flex';
                 
             } catch (error) {
-                console.error("Firebase Error:", error);
-                alert("সেভ করতে সমস্যা হয়েছে: " + error.message);
+                console.error("Save Error:", error);
+                alert("সেভ করতে সমস্যা হয়েছে। অনুগ্রহ করে ইন্টারনেট চেক করুন।");
                 btn.innerText = "আবার চেষ্টা করুন";
                 btn.disabled = false;
             }
