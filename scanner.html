@@ -52,7 +52,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        // আপনার দেওয়া মডেল লিঙ্কটি এখানে বসান
+        // আপনার দেওয়া মডেল লিঙ্কটি এখানে বসান
         const URL = "https://teachablemachine.withgoogle.com/models/[...]"; 
         
         let model, webcam, maxPredictions;
@@ -120,7 +120,6 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            isPaused = true;
             const status = document.getElementById('status-msg');
             status.style.display = "block";
             status.innerText = "বিশ্লেষণ হচ্ছে...";
@@ -134,12 +133,16 @@
                 document.getElementById("capture-btn").style.display = "none";
                 
                 await loadModel();
+                // ইমেজ এলিমেন্ট পুরোপুরি লোড হওয়ার জন্য predict কল করা হচ্ছে
                 await predict(img);
                 status.style.display = "none";
             }
         }
 
         async function predict(imageElement) {
+            if (!model) return;
+            
+            // Teachable Machine মডেলে প্রেডিকশন
             const prediction = await model.predict(imageElement);
             let highestProb = 0;
             let bestClass = "";
