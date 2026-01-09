@@ -32,15 +32,15 @@
         .gps-btn { position: absolute; bottom: 120px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; }
 
         /* Success Popup Style */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; text-align: center; position: relative; animation: popIn 0.3s ease-out; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-icon { font-size: 60px; color: #4CAF50; margin-bottom: 15px; }
         .modal-card h2 { margin: 0 0 10px; color: #333; }
-        .modal-card p { color: #666; margin-bottom: 25px; }
+        .modal-card p { color: #666; margin-bottom: 25px; line-height: 1.6; }
         .modal-btns { display: flex; flex-direction: column; gap: 10px; }
         .modal-btn-go { background: #2E7D32; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .modal-close-x { position: absolute; top: 15px; right: 15px; font-size: 20px; color: #999; cursor: pointer; }
+        .modal-close-x { position: absolute; top: 15px; right: 15px; font-size: 20px; color: #999; cursor: pointer; border: none; background: none; }
     </style>
 </head>
 <body>
@@ -67,13 +67,13 @@
 
     <div class="modal-overlay" id="success-modal">
         <div class="modal-card">
-            <i class="modal-close-x fas fa-times" onclick="closeModal()"></i>
+            <button class="modal-close-x" onclick="closeModal()"><i class="fas fa-times"></i></button>
             <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
-            <h2>অভিনন্দন!</h2>
-            <p>আপনার জমিতি সফলভাবে সেভ হয়েছে। এখন আপনি প্রোফাইলে গিয়ে ফসলের নাম যোগ করতে পারেন।</p>
+            <h2>সফলভাবে সেভ হয়েছে!</h2>
+            <p>আপনার জমিতি সফলভাবে প্রোফাইলে যুক্ত করা হয়েছে। এখনই ফসলের নাম সেট করতে চান?</p>
             <div class="modal-btns">
                 <button class="modal-btn-go" onclick="goToProfile()">ফসলের নাম যোগ করুন</button>
-                <button class="btn-close" style="margin:0" onclick="closeModal()">পরে করব</button>
+                <button class="btn-close" style="margin:0; background:#eee;" onclick="closeModal()">পরে করব</button>
             </div>
         </div>
     </div>
@@ -88,9 +88,9 @@
         var currentArea = 0;
         var currentUser = null;
 
-        // পপ-আপ ফাংশনগুলো গ্লোবাল রাখা হয়েছে যাতে HTML থেকে এক্সেস পায়
+        // গ্লোবাল ফাংশন
         window.closeModal = () => { document.getElementById('success-modal').style.display = 'none'; };
-        window.goToProfile = () => { window.location.href = 'Dashboard.html?tab=lands'; };
+        window.goToProfile = () => { window.location.href = 'Dashboard.html'; };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -128,7 +128,7 @@
                     document.getElementById('result-box').classList.add('active');
                     document.getElementById('res-title').innerText = land.name;
                     document.getElementById('res-value').innerText = land.area + " শতাংশ";
-                    document.getElementById('res-desc').innerText = "তারিখ: " + land.date;
+                    document.getElementById('res-desc').innerText = "তারিখ: " + (land.date || "N/A");
                     document.getElementById('save-btn').style.display = 'none';
                 }
             } catch (err) { console.error("Data load failed:", err); }
@@ -146,7 +146,8 @@
         document.getElementById('undo-btn').onclick = () => {
             if(points.length > 0) {
                 points.pop();
-                map.removeLayer(markers.pop());
+                var m = markers.pop();
+                if(m) map.removeLayer(m);
                 updatePolygon();
                 if(points.length < 3) document.getElementById('done-btn').style.display = 'none';
             }
@@ -172,18 +173,22 @@
             document.getElementById('res-desc').innerText = "চিহ্নিত এলাকার মোট আয়তন উপরে দেখা যাচ্ছে।";
         };
 
+        // সেভ করার ফাংশন - FIXED
         document.getElementById('save-btn').onclick = async () => {
             if (!currentUser) { alert("লগইন সেশন পাওয়া যায়নি!"); return; }
+            
             const landName = prompt("এই জমিটার একটি নাম দিন (যেমন: উত্তর মাঠ, বাড়ির পাশের জমি):", "আমার জমি");
-            if (landName === null || landName.trim() === "") { alert("জমির নাম দেওয়া আবশ্যক!"); return; }
+            if (landName === null) return; // User cancelled
+            if (landName.trim() === "") { alert("জমির নাম দেওয়া আবশ্যক!"); return; }
 
+            const btn = document.getElementById('save-btn');
             try {
-                const btn = document.getElementById('save-btn');
-                btn.innerText = "সেভ হচ্ছে...";
+                btn.innerText = "প্রসেসিং...";
                 btn.disabled = true;
 
                 const firebaseFriendlyPoints = points.map(p => ({ lat: p[0], lng: p[1] }));
 
+                // Firebase Save operation
                 await addDoc(collection(db, "lands"), {
                     userId: currentUser.uid,
                     name: landName,
@@ -194,15 +199,15 @@
                     timestamp: new Date()
                 });
 
-                // Show Advanced Success Pop-up
+                // Success
+                btn.innerText = "সফলভাবে সেভ হয়েছে";
                 document.getElementById('success-modal').style.display = 'flex';
-                btn.innerText = "সেভ হয়েছে ✅";
                 
             } catch (error) {
-                console.error("Save error:", error);
+                console.error("Firebase Error:", error);
                 alert("সেভ করতে সমস্যা হয়েছে: " + error.message);
-                document.getElementById('save-btn').innerText = "প্রোফাইলে সেভ করুন";
-                document.getElementById('save-btn').disabled = false;
+                btn.innerText = "আবার চেষ্টা করুন";
+                btn.disabled = false;
             }
         };
 
