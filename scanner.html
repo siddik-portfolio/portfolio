@@ -52,7 +52,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        // আপনার দেওয়া মডেল লিঙ্কটি এখানে বসান
+        // আপনার সঠিক মডেল লিঙ্ক এখানে দিন
         const URL = "https://teachablemachine.withgoogle.com/models/[...]"; 
         
         let model, webcam, maxPredictions;
@@ -67,6 +67,8 @@
                     maxPredictions = model.getTotalClasses();
                 } catch (err) {
                     console.error("Model failed to load", err);
+                    document.getElementById("label-container").innerHTML = "মডেল লোড হতে সমস্যা হয়েছে। ইন্টারনেট চেক করুন।";
+                    document.getElementById("label-container").style.display = "block";
                 }
             }
         }
@@ -89,17 +91,18 @@
                 document.getElementById("image-preview").appendChild(webcam.canvas);
                 document.getElementById("capture-btn").style.display = "flex"; 
                 document.getElementById("capture-btn").innerHTML = '<i class="fas fa-dot-circle"></i> ছবি তুলুন';
+                document.getElementById("capture-btn").onclick = captureImage;
                 
                 status.style.display = "none";
                 window.requestAnimationFrame(loop);
             } catch (e) {
-                alert("ক্যামেরা ব্যবহারের অনুমতি দিন অথবা আপনার ডিভাইসে ক্যামেরা চেক করুন।");
+                alert("ক্যামেরা ব্যবহারের অনুমতি দিন।");
                 status.style.display = "none";
             }
         }
 
         async function loop() {
-            if(!isPaused) {
+            if(!isPaused && webcam) {
                 webcam.update();
                 await predict(webcam.canvas);
                 window.requestAnimationFrame(loop);
@@ -124,7 +127,7 @@
             status.style.display = "block";
             status.innerText = "বিশ্লেষণ হচ্ছে...";
 
-            const img = document.createElement('img');
+            const img = new Image();
             img.src = window.URL.createObjectURL(file);
             
             img.onload = async function() {
@@ -133,38 +136,43 @@
                 document.getElementById("capture-btn").style.display = "none";
                 
                 await loadModel();
-                // ইমেজ এলিমেন্ট পুরোপুরি লোড হওয়ার জন্য predict কল করা হচ্ছে
-                await predict(img);
+                if (model) {
+                    await predict(img);
+                }
                 status.style.display = "none";
             }
         }
 
         async function predict(imageElement) {
             if (!model) return;
-            
-            // Teachable Machine মডেলে প্রেডিকশন
-            const prediction = await model.predict(imageElement);
-            let highestProb = 0;
-            let bestClass = "";
+            try {
+                const prediction = await model.predict(imageElement);
+                let highestProb = 0;
+                let bestClass = "";
 
-            for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > highestProb) {
-                    highestProb = prediction[i].probability;
-                    bestClass = prediction[i].className;
+                for (let i = 0; i < maxPredictions; i++) {
+                    if (prediction[i].probability > highestProb) {
+                        highestProb = prediction[i].probability;
+                        bestClass = prediction[i].className;
+                    }
                 }
-            }
 
-            const resBox = document.getElementById("label-container");
-            resBox.style.display = "block";
-            
-            if (highestProb > 0.40) {
-                resBox.innerHTML = `
-                    <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
-                    <div class="disease-name">${bestClass}</div>
-                    <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
-                `;
-            } else {
-                resBox.innerHTML = "<div>পাতাটি স্পষ্ট নয়, আরও কাছে থেকে বা পরিষ্কার আলোতে ছবি তুলুন।</div>";
+                const resBox = document.getElementById("label-container");
+                resBox.style.display = "block";
+                
+                if (highestProb > 0.10) { // এখানে ৪০% থেকে ১০% করেছি দেখার জন্য যে রেজাল্ট আসে কি না
+                    resBox.innerHTML = `
+                        <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
+                        <div class="disease-name">${bestClass}</div>
+                        <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
+                    `;
+                } else {
+                    resBox.innerHTML = "<div>কিছুই শনাক্ত করা যায়নি। আলোতে পরিষ্কার ছবি নিন।</div>";
+                }
+            } catch (err) {
+                console.error("Prediction Error:", err);
+                document.getElementById("label-container").innerHTML = "বিশ্লেষণে ত্রুটি হয়েছে। আবার চেষ্টা করুন।";
+                document.getElementById("label-container").style.display = "block";
             }
         }
     </script>
