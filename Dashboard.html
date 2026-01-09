@@ -17,7 +17,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- LOGOUT MODAL STYLES (ADVANCED) --- */
+        /* --- LOGOUT MODAL STYLES --- */
         .logout-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
@@ -37,15 +37,12 @@
             font-size: 30px; margin: 0 auto 20px; border: 2px solid #fee2e2;
         }
         .modal-btns { display: flex; gap: 10px; margin-top: 25px; }
-        .m-btn { 
-            flex: 1; padding: 12px; border: none; border-radius: 12px; 
-            font-weight: bold; cursor: pointer; transition: 0.2s;
-        }
+        .m-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-cancel { background: #f3f4f6; color: #666; }
         .btn-confirm { background: var(--danger); color: white; }
         .m-btn:hover { filter: brightness(0.9); transform: translateY(-2px); }
 
-        /* --- SIDEBAR & MAIN PANEL (ORIGINAL) --- */
+        /* --- SIDEBAR & MAIN PANEL --- */
         .sidebar { width: 250px; background: white; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 30px 20px; }
         .sidebar-logo { display: flex; align-items: center; gap: 10px; color: var(--primary); font-size: 20px; font-weight: bold; margin-bottom: 50px; }
         .nav-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 12px; cursor: pointer; color: #666; transition: 0.3s; margin-bottom: 5px; text-decoration: none; }
@@ -62,7 +59,19 @@
         .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
         .map-section { background: white; border-radius: 20px; padding: 20px; box-shadow: var(--card-shadow); }
         .map-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .map-placeholder { width: 100%; height: 300px; background: #e0e0e0; border-radius: 15px; background-image: url('https://img.freepik.com/free-vector/aerial-view-farmland-scene_1308-51347.jpg'); background-size: cover; position: relative; }
+        
+        /* --- UPDATED ADVANCED MAP IMAGE --- */
+        .map-placeholder { 
+            width: 100%; 
+            height: 300px; 
+            background: #e0e0e0; 
+            border-radius: 15px; 
+            background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1000'); 
+            background-size: cover; 
+            background-position: center;
+            position: relative;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
+        }
 
         .ai-panel { background: white; border-radius: 20px; padding: 20px; box-shadow: var(--card-shadow); display: flex; flex-direction: column; }
         .ai-btn { background: var(--primary); color: white; padding: 15px; border-radius: 12px; text-align: center; font-weight: bold; text-decoration: none; margin-top: 15px; }
@@ -94,11 +103,9 @@
 
     <div id="logoutOverlay" class="logout-overlay">
         <div class="logout-modal">
-            <div class="logout-icon-circle">
-                <i class="fas fa-sign-out-alt"></i>
-            </div>
+            <div class="logout-icon-circle"><i class="fas fa-sign-out-alt"></i></div>
             <h3 style="color:#333; margin-bottom:10px;">লগআউট করতে চান?</h3>
-            <p style="color:#777; font-size:14px;">আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্ট থেকে বের হয়ে যেতে চান?</p>
+            <p style="color:#777; font-size:14px;">আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্ট থেকে বের হয়ে যেতে চান?</p>
             <div class="modal-btns">
                 <button class="m-btn btn-cancel" onclick="closeLogoutModal()">বাতিল</button>
                 <button class="m-btn btn-confirm" id="confirmLogout">হ্যাঁ, বের হোন</button>
@@ -134,7 +141,7 @@
             </div>
             <div class="ai-panel">
                 <h3>AI বিশেষজ্ঞ</h3>
-                <div style="margin:20px 0; font-size:14px; color:#666"><p>ছবি তুলে ফসলের রোগ নির্ণয় করুন মুহূর্তেই।</p></div>
+                <div style="margin:20px 0; font-size:14px; color:#666"><p>ছবি তুলে ফসলের রোগ নির্ণয় করুন মুহূর্তেই।</p></div>
                 <a href="scanner.html" class="ai-btn"><i class="fas fa-camera"></i> স্ক্যান শুরু করুন</a>
             </div>
         </div>
@@ -159,11 +166,9 @@
             } else { window.location.href = 'index.html'; }
         });
 
-        // Modal Controls
         window.openLogoutModal = () => document.getElementById('logoutOverlay').classList.add('show');
         window.closeLogoutModal = () => document.getElementById('logoutOverlay').classList.remove('show');
 
-        // Confirm Logout with Firebase
         document.getElementById('confirmLogout').addEventListener('click', () => {
             signOut(auth).then(() => { window.location.href = 'index.html'; });
         });
