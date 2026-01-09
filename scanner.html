@@ -52,13 +52,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
     <script>
-        // আপনার দেওয়া মডেল লিঙ্ক এখানে আপডেট করা হয়েছে
+        // আপনার দেওয়া মডেল লিঙ্কটি এখানে বসান
         const URL = "https://teachablemachine.withgoogle.com/models/[...]"; 
         
         let model, webcam, maxPredictions;
         let isPaused = false;
 
-        // মডেল লোড করার ফাংশন
         async function loadModel() {
             if (!model) {
                 try {
@@ -72,7 +71,6 @@
             }
         }
 
-        // ক্যামেরা চালু করার ফাংশন
         async function initCamera() {
             const status = document.getElementById('status-msg');
             status.style.display = "block";
@@ -108,7 +106,6 @@
             }
         }
 
-        // ছবি ক্যাপচার বাটন লজিক
         async function captureImage() {
             if (webcam) {
                 isPaused = true; 
@@ -119,7 +116,6 @@
             }
         }
 
-        // গ্যালারি থেকে ছবি আপলোড লজিক
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -143,7 +139,6 @@
             }
         }
 
-        // রোগ নির্ণয় করার মেইন ফাংশন
         async function predict(imageElement) {
             const prediction = await model.predict(imageElement);
             let highestProb = 0;
@@ -159,189 +154,14 @@
             const resBox = document.getElementById("label-container");
             resBox.style.display = "block";
             
-            // রেজাল্ট দেখানোর ফরম্যাট
-            if (highestProb > 0.40) { // ৪০% এর বেশি নিশ্চিত হলে রেজাল্ট দেখাবে
+            if (highestProb > 0.40) {
                 resBox.innerHTML = `
-                    <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
+                    <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
                     <div class="disease-name">${bestClass}</div>
-                    <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
+                    <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
                 `;
             } else {
-                resBox.innerHTML = "<div>পাতাটি স্পষ্ট নয়, আরও কাছে থেকে বা পরিষ্কার আলোতে ছবি তুলুন।</div>";
-            }
-        }
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Scanner - Smart Agri</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { background: #f4f7f6; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
-        .scanner-box { background: white; max-width: 400px; margin: 20px auto; padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        #image-preview { width: 100%; height: 300px; background: #eee; border-radius: 15px; overflow: hidden; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; border: 2px solid #ddd; }
-        canvas, img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .action-buttons { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
-        .btn-action { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: 0.3s; }
-        
-        .btn-camera { background: #4CAF50; color: white; }
-        .btn-upload { background: #FF9800; color: white; }
-        .btn-capture { background: #e91e63; color: white; display: none; width: 100%; margin-top: 10px; }
-        
-        .result-box { background: #e8f5e9; padding: 15px; border-radius: 10px; border: 1px solid #4CAF50; display: none; margin-top: 20px; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .disease-name { font-size: 20px; font-weight: bold; color: #c62828; }
-        .loading-text { color: #FF9800; font-weight: bold; display: none; margin: 10px 0; }
-    </style>
-</head>
-<body>
-    <a href="Dashboard.html" style="float:left; color:#333; font-size:20px;"><i class="fas fa-arrow-left"></i></a>
-    <h2 style="color: #2E7D32;">এআই রোগ নির্ণয়</h2>
-    
-    <div class="scanner-box">
-        <div id="image-preview">
-            <i class="fas fa-leaf" id="placeholder-icon" style="font-size:50px; color:#ccc;"></i>
-        </div>
-        
-        <div class="action-buttons">
-            <button class="btn-action btn-camera" onclick="initCamera()"><i class="fas fa-camera"></i> ক্যামেরা</button>
-            <button class="btn-action btn-upload" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> গ্যালারি</button>
-        </div>
-        
-        <button id="capture-btn" class="btn-action btn-capture" onclick="captureImage()"><i class="fas fa-dot-circle"></i> ছবি তুলুন</button>
-        
-        <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
-        
-        <p id="status-msg" class="loading-text">প্রসেসিং...</p>
-        
-        <div id="label-container" class="result-box"></div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-
-    <script>
-        // আপনার দেওয়া মডেল লিঙ্ক এখানে আপডেট করা হয়েছে
-        const URL = "https://teachablemachine.withgoogle.com/models/[...]"; 
-        
-        let model, webcam, maxPredictions;
-        let isPaused = false;
-
-        // মডেল লোড করার ফাংশন
-        async function loadModel() {
-            if (!model) {
-                try {
-                    const modelURL = URL + "model.json";
-                    const metadataURL = URL + "metadata.json";
-                    model = await tmImage.load(modelURL, metadataURL);
-                    maxPredictions = model.getTotalClasses();
-                } catch (err) {
-                    console.error("Model failed to load", err);
-                }
-            }
-        }
-
-        // ক্যামেরা চালু করার ফাংশন
-        async function initCamera() {
-            const status = document.getElementById('status-msg');
-            status.style.display = "block";
-            status.innerText = "মডেল লোড হচ্ছে...";
-            isPaused = false;
-
-            try {
-                await loadModel();
-                status.innerText = "ক্যামেরা চালু হচ্ছে...";
-                
-                webcam = new tmImage.Webcam(400, 400, false); 
-                await webcam.setup({ facingMode: "environment" }); 
-                await webcam.play();
-                
-                document.getElementById("image-preview").innerHTML = "";
-                document.getElementById("image-preview").appendChild(webcam.canvas);
-                document.getElementById("capture-btn").style.display = "flex"; 
-                document.getElementById("capture-btn").innerHTML = '<i class="fas fa-dot-circle"></i> ছবি তুলুন';
-                
-                status.style.display = "none";
-                window.requestAnimationFrame(loop);
-            } catch (e) {
-                alert("ক্যামেরা ব্যবহারের অনুমতি দিন অথবা আপনার ডিভাইসে ক্যামেরা চেক করুন।");
-                status.style.display = "none";
-            }
-        }
-
-        async function loop() {
-            if(!isPaused) {
-                webcam.update();
-                await predict(webcam.canvas);
-                window.requestAnimationFrame(loop);
-            }
-        }
-
-        // ছবি ক্যাপচার বাটন লজিক
-        async function captureImage() {
-            if (webcam) {
-                isPaused = true; 
-                webcam.pause();
-                document.getElementById("capture-btn").innerHTML = '<i class="fas fa-sync"></i> আবার ট্রাই করুন';
-                document.getElementById("capture-btn").onclick = () => location.reload();
-                await predict(webcam.canvas); 
-            }
-        }
-
-        // গ্যালারি থেকে ছবি আপলোড লজিক
-        async function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            isPaused = true;
-            const status = document.getElementById('status-msg');
-            status.style.display = "block";
-            status.innerText = "বিশ্লেষণ হচ্ছে...";
-
-            const img = document.createElement('img');
-            img.src = window.URL.createObjectURL(file);
-            
-            img.onload = async function() {
-                document.getElementById("image-preview").innerHTML = "";
-                document.getElementById("image-preview").appendChild(img);
-                document.getElementById("capture-btn").style.display = "none";
-                
-                await loadModel();
-                await predict(img);
-                status.style.display = "none";
-            }
-        }
-
-        // রোগ নির্ণয় করার মেইন ফাংশন
-        async function predict(imageElement) {
-            const prediction = await model.predict(imageElement);
-            let highestProb = 0;
-            let bestClass = "";
-
-            for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > highestProb) {
-                    highestProb = prediction[i].probability;
-                    bestClass = prediction[i].className;
-                }
-            }
-
-            const resBox = document.getElementById("label-container");
-            resBox.style.display = "block";
-            
-            // রেজাল্ট দেখানোর ফরম্যাট
-            if (highestProb > 0.40) { // ৪০% এর বেশি নিশ্চিত হলে রেজাল্ট দেখাবে
-                resBox.innerHTML = `
-                    <div style="font-weight:bold; color:#2E7D32; margin-bottom:5px;">শনাক্ত করা হয়েছে:</div>
-                    <div class="disease-name">${bestClass}</div>
-                    <div style="font-size:13px; color:#666; margin-top:5px;">নিশ্চয়তা: ${(highestProb * 100).toFixed(1)}%</div>
-                `;
-            } else {
-                resBox.innerHTML = "<div>পাতাটি স্পষ্ট নয়, আরও কাছে থেকে বা পরিষ্কার আলোতে ছবি তুলুন।</div>";
+                resBox.innerHTML = "<div>পাতাটি স্পষ্ট নয়, আরও কাছে থেকে বা পরিষ্কার আলোতে ছবি তুলুন।</div>";
             }
         }
     </script>
