@@ -221,9 +221,7 @@
             const crop = land.cropName || "নির্ধারিত নেই";
             
             // ম্যাপ লিঙ্কটি ফিক্স করা হলো যাতে সরাসরি ম্যাপ ওপেন হয়
-            const mapUrl = (land.lat && land.lng) 
-                ? `https://www.google.com/maps?q=${land.lat},${land.lng}` 
-                : "map.html";
+           const mapUrl = `map.html?id=${docSnap.id}`;
 
             html += `
                 <div class="mini-card" style="padding-bottom: 20px;">
@@ -262,6 +260,7 @@
 </script>
 </body>
 </html>
+
 
 
 
