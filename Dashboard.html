@@ -175,55 +175,76 @@
     </div>
 
     <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from './firebase-config.js';
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    document.getElementById('display-name').innerText = "হ্যালো, " + (userDoc.data().fullName || "কৃষক বন্ধু");
-                }
-                document.getElementById('weather').innerText = "২৯°C পরিষ্কার";
-                renderLands(user.uid);
-            } else { window.location.href = 'index.html'; }
-        });
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // আপনার আগের লজিক: প্রথমে ডাটাবেজ থেকে নাম চেক করবে
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            let finalName = "কৃষক বন্ধু";
 
-        window.openLogoutModal = () => document.getElementById('logoutOverlay').classList.add('show');
-        window.closeLogoutModal = () => document.getElementById('logoutOverlay').classList.remove('show');
-
-        document.getElementById('confirmLogout').addEventListener('click', () => {
-            signOut(auth).then(() => { window.location.href = 'index.html'; });
-        });
-
-        async function renderLands(uid) {
-            const container = document.getElementById('land-list');
-            container.innerHTML = "লোড হচ্ছে...";
-            const q = query(collection(db, "lands"), where("userId", "==", uid));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) { container.innerHTML = "কোনো জমি পাওয়া যায়নি।"; return; }
-
-            let html = "";
-            querySnapshot.forEach((docSnap) => {
-                const land = docSnap.data();
-                html += `
-                    <div class="mini-card">
-                        <button class="del-btn" onclick="deleteLand('${docSnap.id}')"><i class="fas fa-times-circle"></i></button>
-                        <strong style="display:block; margin-bottom:5px;">${land.name}</strong>
-                        <small color="#777"><i class="fas fa-expand"></i> ${land.area} শতাংশ</small>
-                        <div class="service-btns">
-                            <button class="s-btn btn-drone" onclick="orderService('ড্রোন', '${land.name}')"><i class="fas fa-plane"></i>ড্রোন</button>
-                            <button class="s-btn btn-harvest" onclick="orderService('কাটাই', '${land.name}')"><i class="fas fa-tractor"></i>কাটাই</button>
-                            <button class="s-btn btn-pump" onclick="orderService('পাম্প', '${land.name}')"><i class="fas fa-water"></i>পাম্প</button>
-                        </div>
-                    </div>`;
-            });
-            container.innerHTML = html;
+            if (userDoc.exists()) {
+                finalName = userDoc.data().fullName || "কৃষক বন্ধু";
+            } else if (user.displayName) {
+                // নতুন যোগ করা অংশ: ডাটাবেজে না থাকলে গুগলের নাম দেখাবে (কোড ভাঙবে না)
+                finalName = user.displayName;
+            }
+            
+            document.getElementById('display-name').innerText = "হ্যালো, " + finalName;
+            document.getElementById('weather').innerText = "২৯°C পরিষ্কার";
+            
+            // আপনার আগের লজিক অনুযায়ী জমি রেন্ডার করা
+            renderLands(user.uid);
+        } else { 
+            window.location.href = 'index.html'; 
         }
+    });
 
-        window.orderService = (s, l) => alert("অর্ডার হয়েছে: " + s + " (" + l + ")");
-        window.deleteLand = async (id) => { if(confirm("মুছে ফেলবেন?")) { await deleteDoc(doc(db, "lands", id)); location.reload(); } }
-    </script>
+    // আপনার আগের মোডাল লজিক
+    window.openLogoutModal = () => document.getElementById('logoutOverlay').classList.add('show');
+    window.closeLogoutModal = () => document.getElementById('logoutOverlay').classList.remove('show');
+
+    document.getElementById('confirmLogout').addEventListener('click', () => {
+        signOut(auth).then(() => { window.location.href = 'index.html'; });
+    });
+
+    // আপনার আগের জমি রেন্ডার করার পুরো ফাংশন (অপরিবর্তিত)
+    async function renderLands(uid) {
+        const container = document.getElementById('land-list');
+        container.innerHTML = "লোড হচ্ছে...";
+        const q = query(collection(db, "lands"), where("userId", "==", uid));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) { container.innerHTML = "কোনো জমি পাওয়া যায়নি।"; return; }
+
+        let html = "";
+        querySnapshot.forEach((docSnap) => {
+            const land = docSnap.data();
+            html += `
+                <div class="mini-card">
+                    <button class="del-btn" onclick="deleteLand('${docSnap.id}')"><i class="fas fa-times-circle"></i></button>
+                    <strong style="display:block; margin-bottom:5px;">${land.name}</strong>
+                    <small color="#777"><i class="fas fa-expand"></i> ${land.area} শতাংশ</small>
+                    <div class="service-btns">
+                        <button class="s-btn btn-drone" onclick="orderService('ড্রোন', '${land.name}')"><i class="fas fa-plane"></i>ড্রোন</button>
+                        <button class="s-btn btn-harvest" onclick="orderService('কাটাই', '${land.name}')"><i class="fas fa-tractor"></i>কাটাই</button>
+                        <button class="s-btn btn-pump" onclick="orderService('পাম্প', '${land.name}')"><i class="fas fa-water"></i>পাম্প</button>
+                    </div>
+                </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // আপনার আগের সার্ভিস এবং ডিলিট ফাংশন
+    window.orderService = (s, l) => alert("অর্ডার হয়েছে: " + s + " (" + l + ")");
+    window.deleteLand = async (id) => { 
+        if(confirm("মুছে ফেলবেন?")) { 
+            await deleteDoc(doc(db, "lands", id)); 
+            location.reload(); 
+        } 
+    }
+</script>
 </body>
 </html>
+
