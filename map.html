@@ -3,68 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Map - Agri Pro</title>
+    <title>Pro Agri Map - Smart Farming</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        #map { height: 100vh; width: 100%; z-index: 1; background: #f0f0f0; }
-        .top-btn { position: absolute; top: 20px; left: 20px; background: white; padding: 10px 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; text-decoration: none; color: #333; display: flex; align-items: center; gap: 5px; }
-        
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; opacity: 1; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2E7D32; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        :root { --primary: #2E7D32; --accent: #39FF14; --glass: rgba(255, 255, 255, 0.9); }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+        #map { height: 100vh; width: 100%; background: #1a1a1a; }
 
-        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; gap: 15px; z-index: 1000; }
-        .btn-action { background: white; border: none; padding: 15px 20px; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .btn-add { background: #4CAF50; color: white; } 
-        .btn-undo { background: white; color: #f44336; } 
-        .btn-done { background: #2196F3; color: white; display: none; }
-        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 900; pointer-events: none; color: white; font-size: 30px; text-shadow: 0 0 5px black; display: none; }
-        
-        #result-box { position: absolute; bottom: 0; left: 0; width: 100%; background: white; padding: 25px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 2000; transform: translateY(100%); transition: 0.3s; }
-        #result-box.active { transform: translateY(0); }
-        .result-title { font-size: 18px; font-weight: bold; color: #2E7D32; margin-bottom: 5px; }
-        .result-val { font-size: 24px; color: #333; font-weight: bold; margin-bottom: 15px; }
-        .btn-save { width: 100%; padding: 15px; background: #2E7D32; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-close { width: 100%; padding: 12px; background: #f5f5f5; color: #555; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .gps-btn { position: absolute; bottom: 120px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; }
+        /* Modern UI Controls */
+        .top-nav { position: absolute; top: 15px; left: 15px; z-index: 1000; display: flex; gap: 10px; }
+        .glass-btn { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.1); padding: 12px 20px; border-radius: 12px; font-weight: 600; color: #333; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s; text-decoration: none; }
+        .glass-btn:hover { transform: translateY(-2px); background: white; }
 
-        .float-card { background: white; padding: 10px 15px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); border-bottom: 4px solid #2E7D32; text-align: center; min-width: 100px; transform: perspective(200px) rotateX(10deg); }
+        /* Improved Floating Card */
+        .refined-float-card { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(5px);
+            padding: 8px 12px; 
+            border-radius: 10px; 
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            min-width: 80px;
+            pointer-events: none;
+        }
+
+        /* Modern Custom Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 5000; display: none; align-items: center; justify-content: center; }
+        .custom-modal { background: white; width: 90%; max-width: 380px; padding: 25px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: left; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border: 2px solid #eee; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .modal-input:focus { border-color: var(--primary); }
+        .modal-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
+
+        /* Modern Result Bar */
+        #result-box { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(150%); width: 90%; max-width: 400px; background: var(--glass); backdrop-filter: blur(15px); padding: 20px; border-radius: 20px; z-index: 2000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        #result-box.active { transform: translateX(-50%) translateY(0); }
+
+        /* Loading Overlay Improvements */
+        #loading-overlay { position: fixed; inset: 0; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.6s ease-in-out; }
+        .loader-circle { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s infinite linear; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay">
-        <div class="spinner"></div>
-        <p style="margin-top:10px; color:#2E7D32;">ম্যাপ প্রস্তুত হচ্ছে...</p>
+        <div class="loader-circle"></div>
+        <p style="margin-top:15px; font-weight: 600; color: #444;">প্রসেসিং হচ্ছে...</p>
     </div>
 
     <div id="map"></div>
-    <div class="crosshair" id="crosshair-target"><i class="fas fa-plus-circle"></i></div>
     
-    <a href="Dashboard.html" class="top-btn"><i class="fas fa-arrow-left"></i> ফিরে যান</a>
-    <div class="gps-btn" id="gps-trigger"><i class="fas fa-crosshairs"></i></div>
+    <div class="top-nav">
+        <a href="Dashboard.html" class="glass-btn"><i class="fas fa-chevron-left"></i> ফিরে যান</a>
+    </div>
 
-    <div class="controls" id="control-bar">
-        <button class="btn-action btn-undo" id="undo-btn"><i class="fas fa-undo"></i></button>
-        <button class="btn-action btn-add" id="add-btn">পয়েন্ট +</button>
-        <button class="btn-action btn-done" id="done-btn">শেষ</button>
+    <div class="modal-overlay" id="input-modal">
+        <div class="custom-modal">
+            <h2 style="margin:0 0 10px 0; color:var(--primary);">জমির তথ্য</h2>
+            <p style="color:#666; font-size:14px;">আপনার জমিটার একটি নাম এবং কি ফসল চাষ করছেন তা লিখুন।</p>
+            
+            <label style="font-weight:bold; font-size:14px;">জমির নাম</label>
+            <input type="text" id="land-name" class="modal-input" placeholder="উদাঃ- উত্তর পাড়ার জমি">
+            
+            <label style="font-weight:bold; font-size:14px;">ফসলের নাম</label>
+            <input type="text" id="crop-name" class="modal-input" placeholder="উদাঃ- আমন ধান">
+            
+            <button class="modal-btn" id="confirm-save">নিশ্চিত করুন</button>
+        </div>
     </div>
 
     <div id="result-box">
-        <h3 class="result-title" id="res-title">ফলাফল</h3>
-        <div class="result-val" id="res-value">...</div>
-        <p id="res-desc" style="color:#666; font-size:14px; margin-bottom:15px;">...</p>
-        <button class="btn-save" id="save-btn">প্রোফাইলে সেভ করুন</button>
-        <button class="btn-close" id="reset-btn">বন্ধ করুন</button>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div id="res-label" style="font-size:12px; color:#666; font-weight:bold; text-transform:uppercase;">পরিমাপকৃত এলাকা</div>
+                <div id="res-value" style="font-size:24px; font-weight:bold; color:#222;">...</div>
+            </div>
+            <button class="glass-btn" id="save-trigger" style="background:var(--primary); color:white;">সেভ করুন</button>
+        </div>
+    </div>
+
+    <div style="position:absolute; bottom:100px; right:20px; z-index:1000; display:flex; flex-direction:column; gap:10px;" id="drawing-controls">
+        <button class="glass-btn" id="add-pt" style="width:60px; height:60px; border-radius:50%; justify-content:center; background:var(--primary); color:white;"><i class="fas fa-plus"></i></button>
+        <button class="glass-btn" id="undo-pt" style="width:60px; height:60px; border-radius:50%; justify-content:center;"><i class="fas fa-undo"></i></button>
+        <button class="glass-btn" id="done-pt" style="width:60px; height:60px; border-radius:50%; justify-content:center; background:#2196F3; color:white; display:none;"><i class="fas fa-check"></i></button>
     </div>
 
     <script type="module">
@@ -72,83 +101,45 @@
         import { collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        let map, points = [], markers = [], polygonLayer;
-        let currentArea = 0;
-        let currentUser = null;
+        let map, points = [], markers = [], polygonLayer, currentArea = 0, currentUser = null;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const landId = urlParams.get('id');
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
+        onAuthStateChanged(auth, (user) => {
+            if (user) { 
+                currentUser = user; 
                 initMap();
-                if (landId) {
-                    await loadSpecificLand(landId);
-                } else {
-                    hideLoader();
-                    document.getElementById('control-bar').style.display = 'flex';
-                    document.getElementById('crosshair-target').style.display = 'block';
-                }
-            } else {
-                window.location.href = 'index.html';
-            }
+                const landId = new URLSearchParams(window.location.search).get('id');
+                if(landId) loadLand(landId); else hideLoader();
+            } else window.location.href = 'index.html';
         });
 
         function initMap() {
-            if (map) return;
-            map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([23.8103, 90.4125], 15);
-
-            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                maxZoom: 20,
-                updateWhenIdle: true
-            }).addTo(map);
-
-            L.Control.geocoder({ position: 'topright' }).addTo(map);
-            document.getElementById('gps-trigger').onclick = () => map.locate({setView: true, maxZoom: 18});
+            map = L.map('map', { zoomControl: false }).setView([23.81, 90.41], 15);
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
         }
 
-        async function loadSpecificLand(id) {
-            try {
-                const docSnap = await getDoc(doc(db, "lands", id));
-                if (docSnap.exists()) {
-                    const land = docSnap.data();
-                    const landPoints = land.points.map(p => [p.lat, p.lng]);
-
-                    const tempPoly = L.polygon(landPoints);
-                    map.fitBounds(tempPoly.getBounds(), { animate: false, padding: [50, 50] });
-
-                    if(polygonLayer) map.removeLayer(polygonLayer);
-                    polygonLayer = L.polygon(landPoints, { color: '#39FF14', weight: 4, fillOpacity: 0.4 }).addTo(map);
-                    
-                    landPoints.forEach(p => {
-                        L.circleMarker(p, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 5 }).addTo(map);
-                    });
-
-                    const center = tempPoly.getBounds().getCenter();
-                    const floatIcon = L.divIcon({
+        async function loadLand(id) {
+            const docSnap = await getDoc(doc(db, "lands", id));
+            if (docSnap.exists()) {
+                const land = docSnap.data();
+                const path = land.points.map(p => [p.lat, p.lng]);
+                
+                polygonLayer = L.polygon(path, { color: '#39FF14', weight: 3, fillOpacity: 0.3 }).addTo(map);
+                map.fitBounds(polygonLayer.getBounds(), { padding: [50, 50] });
+                
+                // Refined Float Card
+                const center = polygonLayer.getBounds().getCenter();
+                L.marker(center, {
+                    icon: L.divIcon({
                         className: 'dummy',
-                        html: `<div class="float-card">
-                                    <div style="font-size:16px; font-weight:bold; color:#333;">${land.area} শতাংশ</div>
-                                    <div style="font-size:11px; color:#2E7D32; font-weight:bold;">${land.name}</div>
-                                    <div style="font-size:10px; color:#666;">ফসল: ${land.cropName || 'নাই'}</div>
+                        html: `<div class="refined-float-card">
+                                <div style="font-size:14px; font-weight:800;">${land.area} শতাংশ</div>
+                                <div style="font-size:10px; opacity:0.8;">${land.name}</div>
                                </div>`,
-                        iconSize: [120, 70], iconAnchor: [60, 35]
-                    });
-                    L.marker(center, { icon: floatIcon }).addTo(map);
-
-                    hideLoader();
-
-                    document.getElementById('result-box').classList.add('active');
-                    document.getElementById('res-title').innerText = "জমির তথ্য";
-                    document.getElementById('res-value').innerText = land.name;
-                    document.getElementById('res-desc').innerText = "ফসল: " + (land.cropName || "নির্ধারিত নেই");
-                    document.getElementById('save-btn').style.display = 'none';
-                    document.getElementById('reset-btn').innerText = "ড্যাশবোর্ডে ফিরুন";
-                    document.getElementById('reset-btn').onclick = () => window.location.href = 'Dashboard.html';
-                }
-            } catch (error) {
-                console.error("Error:", error);
+                        iconSize: [100, 40], iconAnchor: [50, 20]
+                    })
+                }).addTo(map);
+                
+                document.getElementById('drawing-controls').style.display = 'none';
                 hideLoader();
             }
         }
@@ -156,72 +147,53 @@
         function hideLoader() {
             const loader = document.getElementById('loading-overlay');
             loader.style.opacity = '0';
-            setTimeout(() => loader.style.display = 'none', 500);
+            setTimeout(() => loader.style.display = 'none', 600);
         }
 
-        // --- সেভ লজিক (নাম + ফসল) ---
-        window.saveLandToFirebase = async () => {
-            const landName = prompt("জমির নাম দিন (উদাঃ- উত্তর পাড়ার জমি):");
-            if (!landName) return;
-            const cropName = prompt("কি ফসল চাষ করছেন? (উদাঃ- ধান, আলু):");
-            if (!cropName) return;
-
-            try {
-                document.getElementById('save-btn').innerText = "সেভ হচ্ছে...";
-                const pointsData = points.map(p => ({ lat: p[0], lng: p[1] }));
-
-                await addDoc(collection(db, "lands"), {
-                    name: landName,
-                    cropName: cropName,
-                    area: currentArea,
-                    points: pointsData,
-                    userId: currentUser.uid,
-                    moistureLevel: Math.floor(Math.random() * 50) + 20,
-                    valveStatus: "CLOSED",
-                    createdAt: serverTimestamp()
-                });
-
-                alert("জমি সফলভাবে সেভ হয়েছে!");
-                window.location.href = 'Dashboard.html';
-            } catch (error) {
-                alert("সেভ করতে সমস্যা হয়েছে!");
-                document.getElementById('save-btn').innerText = "প্রোফাইলে সেভ করুন";
-            }
-        };
-
-        document.getElementById('add-btn').onclick = () => {
+        // Drawing Logic
+        document.getElementById('add-pt').onclick = () => {
             const center = map.getCenter();
             points.push([center.lat, center.lng]);
-            const marker = L.circleMarker(center, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 6 }).addTo(map);
-            markers.push(marker);
+            const m = L.circleMarker(center, { radius: 6, color: 'white', fillColor: '#39FF14', fillOpacity: 1 }).addTo(map);
+            markers.push(m);
+            updatePolygon();
+            if(points.length >= 3) document.getElementById('done-pt').style.display = 'flex';
+        };
+
+        function updatePolygon() {
             if(polygonLayer) map.removeLayer(polygonLayer);
-            polygonLayer = L.polygon(points, { color: '#39FF14', weight: 3, fillOpacity: 0.3 }).addTo(map);
-            if(points.length >= 3) document.getElementById('done-btn').style.display = 'flex';
-        };
+            polygonLayer = L.polygon(points, { color: '#39FF14', weight: 3, fillOpacity: 0.2 }).addTo(map);
+        }
 
-        document.getElementById('undo-btn').onclick = () => {
-            if(points.length > 0) {
-                points.pop();
-                const m = markers.pop(); if(m) map.removeLayer(m);
-                if(polygonLayer) map.removeLayer(polygonLayer);
-                polygonLayer = L.polygon(points, { color: '#39FF14', weight: 3, fillOpacity: 0.3 }).addTo(map);
-                if(points.length < 3) document.getElementById('done-btn').style.display = 'none';
-            }
-        };
-
-        document.getElementById('done-btn').onclick = () => {
-            const tPoints = [...points, points[0]];
-            const polyGeo = turf.polygon([tPoints.map(p => [p[1], p[0]])]);
+        document.getElementById('done-pt').onclick = () => {
+            const polyGeo = turf.polygon([[...points, points[0]].map(p => [p[1], p[0]])]);
             currentArea = (turf.area(polyGeo) / 40.4686).toFixed(2);
-            
             document.getElementById('res-value').innerText = currentArea + " শতাংশ";
             document.getElementById('result-box').classList.add('active');
-            document.getElementById('control-bar').style.display = 'none';
-            document.getElementById('crosshair-target').style.display = 'none';
         };
 
-        document.getElementById('save-btn').onclick = window.saveLandToFirebase;
-        document.getElementById('reset-btn').onclick = () => location.reload();
+        // Modern Save Flow
+        document.getElementById('save-trigger').onclick = () => {
+            document.getElementById('input-modal').style.display = 'flex';
+        };
+
+        document.getElementById('confirm-save').onclick = async () => {
+            const name = document.getElementById('land-name').value;
+            const crop = document.getElementById('crop-name').value;
+            
+            if(!name || !crop) return alert("সবগুলো তথ্য পূরণ করুন");
+
+            document.getElementById('confirm-save').innerText = "সেভ হচ্ছে...";
+            try {
+                await addDoc(collection(db, "lands"), {
+                    name, cropName: crop, area: currentArea,
+                    points: points.map(p => ({lat: p[0], lng: p[1]})),
+                    userId: currentUser.uid,
+                    createdAt: serverTimestamp()
+                });
+                window.location.href = 'Dashboard.html';
+            } catch (e) { alert("Error!"); }
+        };
     </script>
 </body>
 </html>
