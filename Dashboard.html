@@ -174,10 +174,10 @@
         <div class="land-footer" id="land-list"></div>
     </div>
 
-  <script type="module">
+ <script type="module">
     import { auth, db } from './firebase-config.js';
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, getDoc, collection, query, where, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -191,75 +191,109 @@
             }
             
             document.getElementById('display-name').innerText = "হ্যালো, " + finalName;
-            document.getElementById('weather').innerText = "২৯°C পরিষ্কার";
             
-            renderLands(user.uid);
+            // ১. ফাস্ট ওয়েদার লোডিং (Cache ব্যবহার করে)
+            loadFastWeather();
+            
+            // ২. রিয়েল-টাইম ল্যান্ড রেন্ডারিং
+            setupRealtimeLands(user.uid);
         } else { 
             window.location.href = 'index.html'; 
         }
     });
 
+    // ওয়েদার ফাংশন: যা আগে ক্যাশ থেকে ডাটা দেখাবে তারপর আপডেট করবে
+    function loadFastWeather() {
+        const cached = localStorage.getItem('last_weather_text');
+        if(cached) document.getElementById('weather').innerText = cached;
+
+        // এপিআই কল করার পর এটি আপডেট হবে (আপনার এপিআই লজিক এখানে থাকতে পারে)
+        // আপাতত স্ট্যাটিক রাখা হলো, তবে এটি ফাস্টার ফিল দেবে
+        setTimeout(() => {
+            const freshWeather = "২৯°C পরিষ্কার";
+            document.getElementById('weather').innerText = freshWeather;
+            localStorage.setItem('last_weather_text', freshWeather);
+        }, 500);
+    }
+
+    // ৩. রিয়েল-টাইম লিসেনার: ডাটা ডিলিট হলে অটো আপডেট হবে, রিলোড লাগবে না
+    function setupRealtimeLands(uid) {
+        const container = document.getElementById('land-list');
+        const q = query(collection(db, "lands"), where("userId", "==", uid));
+
+        // onSnapshot ব্যবহার করলে ডাটাবেজে কোনো পরিবর্তন হলেই এটি অটো কল হয়
+        onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                container.innerHTML = "কোনো জমি পাওয়া যায়নি।";
+                return;
+            }
+
+            let html = "";
+            snapshot.forEach((docSnap) => {
+                const land = docSnap.data();
+                const crop = land.cropName || "নির্ধারিত নেই";
+                const mapUrl = `map.html?id=${docSnap.id}`;
+
+                // প্রতিটি কার্ডে একটি ইউনিক আইডি দেওয়া হলো যাতে ডিলিট করার সময় এনিমেশন দেওয়া যায়
+                html += `
+                    <div class="mini-card" id="card-${docSnap.id}" style="padding-bottom: 20px; transition: 0.3s;">
+                        <button class="del-btn" onclick="deleteLand('${docSnap.id}')"><i class="fas fa-times-circle"></i></button>
+                        <strong style="display:block; margin-bottom:5px;">${land.name}</strong>
+                        
+                        <div style="font-size: 11px; color: var(--primary); margin-bottom: 5px; font-weight: bold;">
+                            <i class="fas fa-seedling"></i> ফসল: ${crop}
+                        </div>
+
+                        <small style="color:#777"><i class="fas fa-expand"></i> ${land.area} শতাংশ</small>
+                        
+                        <div style="margin-top: 10px;">
+                            <a href="${mapUrl}" style="text-decoration:none; font-size:10px; background:#f0f0f0; padding:4px 8px; border-radius:5px; color:#333; display:inline-block;">
+                                <i class="fas fa-location-dot"></i> ম্যাপে দেখুন
+                            </a>
+                        </div>
+
+                        <div class="service-btns">
+                            <button class="s-btn btn-drone" onclick="orderService('ড্রোন', '${land.name}')"><i class="fas fa-plane"></i>ড্রোন</button>
+                            <button class="s-btn btn-harvest" onclick="orderService('কাটাই', '${land.name}')"><i class="fas fa-tractor"></i>কাটাই</button>
+                            <button class="s-btn btn-pump" onclick="orderService('পাম্প', '${land.name}')"><i class="fas fa-water"></i>পাম্প</button>
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        });
+    }
+
+    // ৪. ইমপ্রুভড ডিলিট ফাংশন (রিলোড ছাড়া)
+    window.deleteLand = async (id) => { 
+        if(confirm("মুছে ফেলবেন?")) { 
+            try {
+                // প্যানিক ডিলিট এনিমেশন (ইউজার ইন্টারফেস থেকে সাথে সাথে হাইড করা)
+                const card = document.getElementById(`card-${id}`);
+                if(card) {
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8)';
+                }
+                
+                await deleteDoc(doc(db, "lands", id));
+                // onSnapshot অটোমেটিক লিস্টটি আপডেট করে দেবে, তাই রিলোড লাগবে না।
+            } catch (err) {
+                alert("ডিলিট করতে সমস্যা হয়েছে।");
+            }
+        } 
+    }
+
+    // বাকি ইউটিলিটি ফাংশন
     window.openLogoutModal = () => document.getElementById('logoutOverlay').classList.add('show');
     window.closeLogoutModal = () => document.getElementById('logoutOverlay').classList.remove('show');
 
     document.getElementById('confirmLogout').addEventListener('click', () => {
         signOut(auth).then(() => { window.location.href = 'index.html'; });
     });
-
-    // আপনার দেওয়া renderLands ফাংশন (অপরিবর্তিত স্ট্রাকচার)
-    async function renderLands(uid) {
-        const container = document.getElementById('land-list');
-        container.innerHTML = "লোড হচ্ছে...";
-        const q = query(collection(db, "lands"), where("userId", "==", uid));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) { container.innerHTML = "কোনো জমি পাওয়া যায়নি।"; return; }
-
-        let html = "";
-        querySnapshot.forEach((docSnap) => {
-            const land = docSnap.data();
-            
-            const crop = land.cropName || "নির্ধারিত নেই";
-            
-            // ম্যাপ লিঙ্কটি ফিক্স করা হলো যাতে সরাসরি ম্যাপ ওপেন হয়
-           const mapUrl = `map.html?id=${docSnap.id}`;
-
-            html += `
-                <div class="mini-card" style="padding-bottom: 20px;">
-                    <button class="del-btn" onclick="deleteLand('${docSnap.id}')"><i class="fas fa-times-circle"></i></button>
-                    <strong style="display:block; margin-bottom:5px;">${land.name}</strong>
-                    
-                    <div style="font-size: 11px; color: var(--primary); margin-bottom: 5px; font-weight: bold;">
-                        <i class="fas fa-seedling"></i> ফসল: ${crop}
-                    </div>
-
-                    <small style="color:#777"><i class="fas fa-expand"></i> ${land.area} শতাংশ</small>
-                    
-                    <div style="margin-top: 10px;">
-                        <a href="${mapUrl}" style="text-decoration:none; font-size:10px; background:#f0f0f0; padding:4px 8px; border-radius:5px; color:#333; display:inline-block;">
-                            <i class="fas fa-location-dot"></i> ম্যাপে দেখুন
-                        </a>
-                    </div>
-
-                    <div class="service-btns">
-                        <button class="s-btn btn-drone" onclick="orderService('ড্রোন', '${land.name}')"><i class="fas fa-plane"></i>ড্রোন</button>
-                        <button class="s-btn btn-harvest" onclick="orderService('কাটাই', '${land.name}')"><i class="fas fa-tractor"></i>কাটাই</button>
-                        <button class="s-btn btn-pump" onclick="orderService('পাম্প', '${land.name}')"><i class="fas fa-water"></i>পাম্প</button>
-                    </div>
-                </div>`;
-        });
-        container.innerHTML = html;
-    }
-
     window.orderService = (s, l) => alert("অর্ডার হয়েছে: " + s + " (" + l + ")");
-    window.deleteLand = async (id) => { 
-        if(confirm("মুছে ফেলবেন?")) { 
-            await deleteDoc(doc(db, "lands", id)); 
-            location.reload(); 
-        } 
-    }
 </script>
 </body>
 </html>
+
 
 
 
