@@ -1,20 +1,21 @@
-// firebase-config.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyD_vUM-9p4xs9J-Z2f7tpcx1n6QDV0kyuM",
-  authDomain: "mart-agri-project.firebaseapp.com",
-  projectId: "mart-agri-project",
-  storageBucket: "mart-agri-project.firebasestorage.app",
-  messagingSenderId: "1006121956730",
-  appId: "1:1006121956730:web:34c311c883b81eb3ff12c3",
-  measurementId: "G-F0BG21C9RL"
+  apiKey: "AIzaSyCK7VU_TW0iTvLTznB9C7f7iCPJGQO966E",
+  authDomain: "smart-agri-5dd41.firebaseapp.com",
+  projectId: "smart-agri-5dd41",
+  storageBucket: "smart-agri-5dd41.firebasestorage.app",
+  messagingSenderId: "561593631144",
+  appId: "1:561593631144:web:69f12331efadb133be5d9d",
+  measurementId: "G-67ZM90R1GN"
 };
 
-// Initialize
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
+const analytics = getAnalytics(app);
