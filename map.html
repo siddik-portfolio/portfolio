@@ -22,7 +22,11 @@
         #map { height: 100vh; width: 100%; z-index: 1; background: #f0f0f0; }
         .top-btn { position: absolute; top: 20px; left: 20px; background: white; padding: 10px 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; text-decoration: none; color: #333; display: flex; align-items: center; gap: 5px; }
         
-        /* ডাইনামিক কন্ট্রোল গ্রিড */
+        /* লোডিং ওভারলে */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2E7D32; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; gap: 15px; z-index: 1000; }
         .btn-action { background: white; border: none; padding: 15px 20px; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .btn-add { background: #4CAF50; color: white; } 
@@ -38,6 +42,9 @@
         .btn-close { width: 100%; padding: 12px; background: #f5f5f5; color: #555; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .gps-btn { position: absolute; bottom: 120px; right: 20px; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer; }
 
+        /* 3D Floating Card Style */
+        .float-card { background: white; padding: 10px 15px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); border-bottom: 4px solid #2E7D32; text-align: center; min-width: 100px; transform: perspective(200px) rotateX(10deg); }
+
         #input-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4000; align-items: center; justify-content: center; }
         .input-card { background: white; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; }
@@ -46,6 +53,11 @@
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top:10px; color:#2E7D32;">লোড হচ্ছে...</p>
+    </div>
 
     <div id="map"></div>
     <div class="crosshair" id="crosshair-target"><i class="fas fa-plus-circle"></i></div>
@@ -64,7 +76,7 @@
         <div class="result-val" id="res-value">...</div>
         <p id="res-desc" style="color:#666; font-size:14px; margin-bottom:15px;">...</p>
         <button class="btn-save" id="save-btn">প্রোফাইলে সেভ করুন</button>
-        <button class="btn-close" id="reset-btn">আবার মাপুন</button>
+        <button class="btn-close" id="reset-btn">বন্ধ করুন</button>
     </div>
 
     <div id="input-modal">...</div> 
@@ -79,9 +91,6 @@
         let currentArea = 0;
         let currentUser = null;
 
-        const showModal = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'flex'; };
-        const hideModal = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; };
-
         const urlParams = new URLSearchParams(window.location.search);
         const landId = urlParams.get('id');
 
@@ -90,10 +99,9 @@
                 currentUser = user;
                 initMap();
                 if (landId) {
-                    // ভিউ মোড: কোনো এডিটিং বাটন থাকবে না
                     loadSpecificLand(landId);
                 } else {
-                    // মাপার মোড: বাটনগুলো দেখাবে
+                    document.getElementById('loading-overlay').style.display = 'none';
                     document.getElementById('control-bar').style.display = 'flex';
                     document.getElementById('crosshair-target').style.display = 'block';
                 }
@@ -111,8 +119,7 @@
 
             L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                 maxZoom: 20, 
-                updateWhenIdle: true,
-                keepBuffer: 2
+                updateWhenIdle: true
             }).addTo(map);
 
             L.Control.geocoder({ position: 'topright' }).addTo(map);
@@ -126,7 +133,11 @@
                     const land = docSnap.data();
                     const landPoints = land.points.map(p => [p.lat, p.lng]);
 
-                    map.setView(landPoints[0], 18);
+                    // ১. Instant Zoom: এনিমেশন ছাড়া জমিটার বাউন্ডারি সেট করা
+                    const tempPoly = L.polygon(landPoints);
+                    map.fitBounds(tempPoly.getBounds(), { animate: false, padding: [50, 50] });
+
+                    // ২. পলিগন ড্রয়িং
                     if(polygonLayer) map.removeLayer(polygonLayer);
                     polygonLayer = L.polygon(landPoints, { color: '#39FF14', weight: 4, fillOpacity: 0.4 }).addTo(map);
                     
@@ -134,19 +145,39 @@
                         L.circleMarker(p, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 5 }).addTo(map);
                     });
 
-                    // UI Setup for Viewer
-                    document.getElementById('res-value').innerText = land.area + " শতাংশ";
-                    document.getElementById('res-title').innerText = land.name;
-                    document.getElementById('res-desc').innerText = "ফসল: " + (land.cropName || "নাই");
+                    // ৩. 3D Floating Card যোগ করা
+                    const center = tempPoly.getBounds().getCenter();
+                    const floatIcon = L.divIcon({
+                        className: 'dummy',
+                        html: `<div class="float-card">
+                                    <div style="font-size:16px; font-weight:bold; color:#333;">${land.area} শতাংশ</div>
+                                    <div style="font-size:11px; color:#2E7D32; font-weight:bold;">${land.name}</div>
+                               </div>`,
+                        iconSize: [120, 60],
+                        iconAnchor: [60, 30]
+                    });
+                    L.marker(center, { icon: floatIcon }).addTo(map);
+
+                    // ৪. লোডার সরানো
+                    document.getElementById('loading-overlay').style.opacity = '0';
+                    setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
+
+                    // রেজাল্ট বক্সের বাটন কনফিগারেশন
                     document.getElementById('result-box').classList.add('active');
+                    document.getElementById('res-title').style.display = 'none';
+                    document.getElementById('res-value').style.display = 'none';
+                    document.getElementById('res-desc').style.display = 'none';
                     document.getElementById('save-btn').style.display = 'none';
                     document.getElementById('reset-btn').innerText = "ড্যাশবোর্ডে ফিরুন";
                     document.getElementById('reset-btn').onclick = () => window.location.href = 'Dashboard.html';
                 }
-            } catch (error) { console.error("Error:", error); }
+            } catch (error) { 
+                console.error("Error:", error); 
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
         }
 
-        // মাপার লজিক (শুধুমাত্র আইডি না থাকলে কাজ করবে)
+        // মাপার লজিক (Add Point, Undo, Done)
         document.getElementById('add-btn').onclick = () => {
             const center = map.getCenter();
             points.push([center.lat, center.lng]);
@@ -170,8 +201,21 @@
 
         document.getElementById('done-btn').onclick = () => {
             const tPoints = [...points, points[0]];
-            const polygon = turf.polygon([tPoints.map(p => [p[1], p[0]])]);
-            currentArea = (turf.area(polygon) / 40.4686).toFixed(2);
+            const polyGeo = turf.polygon([tPoints.map(p => [p[1], p[0]])]);
+            currentArea = (turf.area(polyGeo) / 40.4686).toFixed(2);
+            
+            // মাপার পর ভাসমান কার্ড দেখানো
+            const center = polygonLayer.getBounds().getCenter();
+            L.marker(center, {
+                icon: L.divIcon({
+                    className: 'dummy',
+                    html: `<div class="float-card" style="border-bottom-color:#2196F3;">
+                                <div style="font-size:16px; font-weight:bold;">${currentArea} শতাংশ</div>
+                           </div>`,
+                    iconSize: [100, 40], iconAnchor: [50, 20]
+                })
+            }).addTo(map);
+
             document.getElementById('res-value').innerText = currentArea + " শতাংশ";
             document.getElementById('result-box').classList.add('active');
             document.getElementById('control-bar').style.display = 'none';
@@ -179,7 +223,6 @@
         };
 
         document.getElementById('reset-btn').onclick = () => location.reload();
-        document.getElementById('go-profile').onclick = () => window.location.href = 'Dashboard.html';
     </script>
 </body>
 </html>
