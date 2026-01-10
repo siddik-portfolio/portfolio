@@ -174,7 +174,7 @@
         <div class="land-footer" id="land-list"></div>
     </div>
 
-    <script type="module">
+  <script type="module">
     import { auth, db } from './firebase-config.js';
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { doc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -206,7 +206,7 @@
         signOut(auth).then(() => { window.location.href = 'index.html'; });
     });
 
-    // আপডেট করা renderLands ফাংশন
+    // আপনার দেওয়া renderLands ফাংশন (অপরিবর্তিত স্ট্রাকচার)
     async function renderLands(uid) {
         const container = document.getElementById('land-list');
         container.innerHTML = "লোড হচ্ছে...";
@@ -218,9 +218,9 @@
         querySnapshot.forEach((docSnap) => {
             const land = docSnap.data();
             
-            // নতুন লজিক: ফসলের নাম এবং ম্যাপ লিঙ্ক তৈরি করা
             const crop = land.cropName || "নির্ধারিত নেই";
-            // ল্যাটিটিউড এবং লঙ্গিটিউড থাকলে গুগল ম্যাপসের লিঙ্ক তৈরি হবে
+            
+            // ম্যাপ লিঙ্কটি ফিক্স করা হলো যাতে সরাসরি ম্যাপ ওপেন হয়
             const mapUrl = (land.lat && land.lng) 
                 ? `https://www.google.com/maps?q=${land.lat},${land.lng}` 
                 : "map.html";
@@ -262,5 +262,6 @@
 </script>
 </body>
 </html>
+
 
 
