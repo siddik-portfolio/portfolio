@@ -5,7 +5,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 
 // ২. আপনার সঠিক কনফিগারেশন
 const firebaseConfig = {
-  apiKey: "AIzaSyCK7VU_TW0iTvLTznB9C7f7iCPJGQ0966E",
+  apiKey: "AIzaSyCK7VU_TW0iTvLTznB9C7f7iCPJGQO966E",
   authDomain: "smart-agri-5dd41.firebaseapp.com",
   databaseURL: "https://smart-agri-5dd41-default-rtdb.firebaseio.com",
   projectId: "smart-agri-5dd41",
@@ -22,5 +22,6 @@ const db = getFirestore(app);
 
 // ৪. অন্য ফাইল বা index.html এ ব্যবহারের জন্য এক্সপোর্ট করুন
 export { auth, db };
+
 
 
