@@ -15,27 +15,27 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* Crosshair: Initially Hidden */
         .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; pointer-events: none; color: white; font-size: 24px; text-shadow: 0 0 10px rgba(0,0,0,0.8); display: none; }
-
         .top-btn { position: absolute; top: 20px; left: 20px; background: white; padding: 10px 20px; border-radius: 12px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-decoration: none; color: #333; font-weight: bold; display: flex; align-items: center; gap: 8px; }
 
-        /* Controls: Initially Hidden */
         .controls-bar { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; gap: 15px; z-index: 1000; }
-        .action-btn { background: white; border: none; padding: 15px 25px; border-radius: 50px; font-weight: bold; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .action-btn { background: white; border: none; padding: 15px 25px; border-radius: 50px; font-weight: bold; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
         .btn-add { background: var(--primary); color: white; }
         .btn-done { background: #2196F3; color: white; display: none; }
 
-        /* Modals */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 5000; display: none; align-items: center; justify-content: center; }
-        .modal-card { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 24px; text-align: center; }
+        .modal-card { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 24px; text-align: center; animation: quickPop 0.15s ease-out; }
+        @keyframes quickPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         .search-box { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; outline: none; }
         .crop-list { max-height: 120px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; margin-bottom: 15px; text-align: left; }
         .crop-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f9f9f9; }
         .crop-item:hover { background: #f0f7f0; }
 
-        /* Float Card for View Mode */
         .view-info-card { background: rgba(255,255,255,0.9); padding: 8px 12px; border-radius: 10px; border-bottom: 3px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center; min-width: 90px; }
+        
+        /* Disabled Button Style */
+        .action-btn:disabled { background: #ccc !important; cursor: not-allowed; transform: scale(0.98); }
 
         #loading-overlay { position: fixed; inset: 0; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; }
         .loader { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -46,7 +46,7 @@
 
     <div id="loading-overlay">
         <div class="loader"></div>
-        <p style="margin-top:10px; color: var(--primary);">ম্যাপ লোড হচ্ছে...</p>
+        <p style="margin-top:10px; color: var(--primary); font-weight: bold;">লোড হচ্ছে...</p>
     </div>
 
     <div id="map"></div>
@@ -56,14 +56,14 @@
 
     <div class="controls-bar" id="controls">
         <button class="action-btn" id="undo-btn"><i class="fas fa-undo"></i></button>
-        <button class="action-btn btn-add" id="add-btn">পয়েন্ট অ্যাড</button>
+        <button class="action-btn btn-add" id="add-btn">পয়েন্ট অ্যাড</button>
         <button class="action-btn btn-done" id="done-btn">পরিমাপ শেষ</button>
     </div>
 
     <div class="modal-overlay" id="save-modal">
         <div class="modal-card">
             <h3 style="margin:0; text-align:left; color:var(--primary);">জমির তথ্য</h3>
-            <input type="text" id="land-name" class="search-box" placeholder="জমির নাম...">
+            <input type="text" id="land-name" class="search-box" placeholder="জমির নাম (উদাঃ- উত্তর মাঠ)">
             <input type="text" id="crop-search" class="search-box" placeholder="ফসল খুঁজুন...">
             <div class="crop-list" id="crop-list-container"></div>
             <button id="final-save-btn" class="action-btn btn-add" style="width:100%; justify-content:center;">সেভ করুন</button>
@@ -72,9 +72,9 @@
 
     <div class="modal-overlay" id="success-modal">
         <div class="modal-card">
-            <i class="fas fa-check-circle" style="font-size:50px; color:var(--primary);"></i>
-            <h2>সফল হয়েছে!</h2>
-            <p>আপনার জমিটার তথ্য সংরক্ষিত হয়েছে।</p>
+            <i class="fas fa-check-circle" style="font-size:50px; color:var(--primary); margin-bottom: 15px;"></i>
+            <h2 style="margin:0;">সফল হয়েছে!</h2>
+            <p style="color: #666;">আপনার জমিটার তথ্য সফলভাবে সংরক্ষিত হয়েছে।</p>
             <button onclick="window.location.href='Dashboard.html'" class="action-btn" style="width:100%; justify-content:center; background:#222; color:white;">ড্যাশবোর্ডে ফিরে যান</button>
         </div>
     </div>
@@ -85,7 +85,8 @@
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         let map, points = [], markers = [], polygonLayer, currentArea = 0, currentUser = null, selectedCrop = "";
-        const crops = ["ধান", "গম", "আলু", "পাট", "ভুট্টা", "সরিষা", "পেঁয়াজ", "রসুন", "মরিচ", "টমেটো"];
+        let isSaving = false; // Spam Prevention Flag
+        const crops = ["ধান", "গম", "আলু", "পাট", "ভুট্টা", "সরিষা", "পেঁয়াজ", "রসুন", "মরিচ", "টমেটো"];
 
         onAuthStateChanged(auth, async (user) => {
             if (user) { 
@@ -95,10 +96,8 @@
                 const landId = urlParams.get('id');
 
                 if (landId) {
-                    // VIEW MODE: জমানো জমি দেখা
                     await loadLandForView(landId);
                 } else {
-                    // EDIT MODE: নতুন জমি মাপা
                     enableEditMode();
                 }
                 hideLoader();
@@ -115,14 +114,9 @@
             if (docSnap.exists()) {
                 const land = docSnap.data();
                 const path = land.points.map(p => [p.lat, p.lng]);
-                
-                // ১. জমিটার সীমানা আঁকা
                 polygonLayer = L.polygon(path, { color: '#39FF14', weight: 4, fillOpacity: 0.4 }).addTo(map);
-                
-                // ২. ম্যাপ অটো জুম করা
                 map.fitBounds(polygonLayer.getBounds(), { padding: [50, 50], animate: true });
 
-                // ৩. তথ্যের কার্ড দেখানো
                 const center = polygonLayer.getBounds().getCenter();
                 L.marker(center, {
                     icon: L.divIcon({
@@ -135,7 +129,6 @@
                     })
                 }).addTo(map);
 
-                // ৪. এডিট টুলস লুকিয়ে রাখা (Ensure Hidden)
                 document.getElementById('controls').style.display = 'none';
                 document.getElementById('crosshair-target').style.display = 'none';
             }
@@ -146,7 +139,6 @@
             document.getElementById('crosshair-target').style.display = 'block';
         }
 
-        // Drawing Logic
         document.getElementById('add-btn').onclick = () => {
             const center = map.getCenter();
             points.push([center.lat, center.lng]);
@@ -174,7 +166,6 @@
             renderCrops("");
         };
 
-        // Crop List & Save Logic... (আগের মতোই রাখা হয়েছে)
         function renderCrops(filter) {
             const container = document.getElementById('crop-list-container');
             container.innerHTML = "";
@@ -189,8 +180,17 @@
         document.getElementById('crop-search').oninput = (e) => renderCrops(e.target.value);
 
         document.getElementById('final-save-btn').onclick = async () => {
+            if(isSaving) return; // স্প্যাম রোধ
+
             const name = document.getElementById('land-name').value;
             if(!name || !selectedCrop) return alert("সব তথ্য দিন");
+
+            // INSTANT UI FEEDBACK
+            isSaving = true;
+            const btn = document.getElementById('final-save-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সেভ হচ্ছে...';
+
             try {
                 await addDoc(collection(db, "lands"), {
                     name, cropName: selectedCrop, area: currentArea,
@@ -198,9 +198,16 @@
                     userId: currentUser.uid,
                     createdAt: serverTimestamp()
                 });
+                
+                // INSTANT SUCCESS MODAL
                 document.getElementById('save-modal').style.display = 'none';
                 document.getElementById('success-modal').style.display = 'flex';
-            } catch (e) { alert("Error!"); }
+            } catch (e) { 
+                alert("Error saving land!"); 
+                isSaving = false;
+                btn.disabled = false;
+                btn.innerText = "সেভ করুন";
+            }
         };
 
         function hideLoader() {
