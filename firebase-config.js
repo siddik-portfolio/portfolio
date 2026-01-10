@@ -2,8 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// আপনার স্ক্রিনশট থেকে সংগৃহীত সঠিক কনফিগারেশন
 const firebaseConfig = {
-  apiKey: "AIzaSyCK7VU_TW0iTvLTznB9C7f7iCPJGQ0966E",
+  apiKey: "AIzaSyCK7VU_TW0iTvLTznB9C7f7iCPJGQ0966E", // নিশ্চিত করুন এই কি-টি ঠিক আছে
   authDomain: "smart-agri-5dd41.firebaseapp.com",
   projectId: "smart-agri-5dd41",
   storageBucket: "smart-agri-5dd41.firebasestorage.app",
@@ -12,9 +13,9 @@ const firebaseConfig = {
   measurementId: "G-67ZM90R1GN"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { auth, db };
+
