@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #2E7D32; --bg: #F0F2F5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 25px; }
+        
+        .land-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        
+        /* Modern Card Design */
+        .land-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid #f0f0f0; }
+        .land-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .crop-badge { background: #E8F5E9; color: var(--primary); padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: bold; }
+        
+        .moisture-box { background: #F8F9FA; border-radius: 15px; padding: 15px; margin: 15px 0; display: flex; justify-content: space-around; border: 1px dashed #ced4da; }
+        .moisture-val { text-align: center; }
+        .moisture-val h4 { margin: 0; font-size: 18px; color: #2C3E50; }
+        .moisture-val p { margin: 0; font-size: 10px; color: #7F8C8D; text-transform: uppercase; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .order-btn { flex: 2; background: #222; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .order-btn:hover { background: var(--primary); }
+        .view-btn { flex: 1; background: white; border: 1.5px solid #eee; border-radius: 14px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .view-btn:hover { background: #F2F3F5; }
+
+        .skeleton { background: #eee; height: 220px; border-radius: 20px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% {opacity: .6} 50% {opacity: 1} 100% {opacity: .6} }
+    </style>
+</head>
+<body>
+
+    <div id="land-list" class="land-grid">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) loadLands(user.uid);
+            else window.parent.location.href = 'index.html';
+        });
+
+        async function loadLands(uid) {
+            const container = document.getElementById('land-list');
+            try {
+                const q = query(collection(db, "lands"), where("userId", "==", uid), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                container.innerHTML = "";
+
+                if (snap.empty) {
+                    container.innerHTML = "<p style='text-align:center; grid-column:1/-1; padding-top:50px; color:#888;'>Apnar kono jomi save kora nei.</p>";
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const id = doc.id;
+                    const moisture = data.moistureLevel || Math.floor(Math.random() * 40) + 20;
+
+                    container.innerHTML += `
+                        <div class="land-card">
+                            <div class="card-header">
+                                <h3 style="margin:0; font-size:18px;">${data.name}</h3>
+                                <div class="crop-badge">${data.cropName}</div>
+                            </div>
+                            <p style="font-size:13px; color:#666; margin: 5px 0 15px 0;">
+                                <i class="fas fa-expand-arrows-alt"></i> ${data.area} Shotangsho
+                            </p>
+
+                            <div class="moisture-box">
+                                <div class="moisture-val">
+                                    <p>Adrotha</p>
+                                    <h4 style="color: ${moisture < 35 ? '#e74c3c' : '#27ae60'}">${moisture}%</h4>
+                                </div>
+                                <div style="width:1px; height:30px; background:#ddd;"></div>
+                                <div class="moisture-val">
+                                    <p>Obostha</p>
+                                    <h4 style="font-size:13px;">${moisture < 35 ? 'Pani Proyojon' : 'Shorbik'}</h4>
+                                </div>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="order-btn" onclick="requestPump('${id}', '${data.name}')">
+                                    <i class="fas fa-truck-pickup"></i> Order Pump
+                                </button>
+                                <button class="view-btn" onclick="window.parent.location.href='Map.html?id=${id}'">
+                                    <i class="fas fa-map-marked-alt" style="color: var(--primary);"></i>
+                                </button>
+                            </div>
+                        </div>`;
+                });
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = "Data load korte error hoyeche.";
+            }
+        }
+
+        // Order function inside iframe
+        window.requestPump = function(id, name) {
+            alert(name + " jomir jonno operator khunja hocche...");
+        }
+    </script>
+</body>
+</html>
