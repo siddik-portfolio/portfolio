@@ -19,14 +19,16 @@
 
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        #map { height: 100vh; width: 100%; z-index: 1; background: #f0f0f0; } /* ডিফল্ট ব্যাকগ্রাউন্ড কালার */
+        #map { height: 100vh; width: 100%; z-index: 1; background: #f0f0f0; }
         .top-btn { position: absolute; top: 20px; left: 20px; background: white; padding: 10px 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; text-decoration: none; color: #333; display: flex; align-items: center; gap: 5px; }
-        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 1000; }
+        
+        /* ডাইনামিক কন্ট্রোল গ্রিড */
+        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; gap: 15px; z-index: 1000; }
         .btn-action { background: white; border: none; padding: 15px 20px; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .btn-add { background: #4CAF50; color: white; } 
         .btn-undo { background: white; color: #f44336; } 
         .btn-done { background: #2196F3; color: white; display: none; }
-        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 900; pointer-events: none; color: white; font-size: 30px; text-shadow: 0 0 5px black; }
+        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 900; pointer-events: none; color: white; font-size: 30px; text-shadow: 0 0 5px black; display: none; }
         
         #result-box { position: absolute; bottom: 0; left: 0; width: 100%; background: white; padding: 25px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 2000; transform: translateY(100%); transition: 0.3s; }
         #result-box.active { transform: translateY(0); }
@@ -38,21 +40,9 @@
 
         #input-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4000; align-items: center; justify-content: center; }
         .input-card { background: white; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; }
-        .input-card h3 { margin-bottom: 15px; color: #333; }
-        .input-card input, .input-card select { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        .input-btns { display: flex; gap: 10px; }
-        .btn-confirm { flex: 1; background: #2E7D32; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-cancel { flex: 1; background: #f5f5f5; color: #555; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; text-align: center; position: relative; animation: popIn 0.3s ease-out; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-icon { font-size: 60px; color: #4CAF50; margin-bottom: 15px; }
-        .modal-card h2 { margin: 0 0 10px; color: #333; }
-        .modal-card p { color: #666; margin-bottom: 25px; line-height: 1.6; }
-        .modal-btns { display: flex; flex-direction: column; gap: 10px; }
-        .modal-btn-go { background: #2E7D32; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .modal-close-x { position: absolute; top: 15px; right: 15px; font-size: 20px; color: #999; cursor: pointer; border: none; background: none; }
     </style>
 </head>
 <body>
@@ -89,10 +79,9 @@
         let currentArea = 0;
         let currentUser = null;
 
-        const showModal = (id) => document.getElementById(id).style.display = 'flex';
-        const hideModal = (id) => document.getElementById(id).style.display = 'none';
+        const showModal = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'flex'; };
+        const hideModal = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; };
 
-        // URL প্যারামিটার চেক করে আগেই ডাটা কল করা (Time Saving)
         const urlParams = new URLSearchParams(window.location.search);
         const landId = urlParams.get('id');
 
@@ -101,7 +90,12 @@
                 currentUser = user;
                 initMap();
                 if (landId) {
+                    // ভিউ মোড: কোনো এডিটিং বাটন থাকবে না
                     loadSpecificLand(landId);
+                } else {
+                    // মাপার মোড: বাটনগুলো দেখাবে
+                    document.getElementById('control-bar').style.display = 'flex';
+                    document.getElementById('crosshair-target').style.display = 'block';
                 }
             } else {
                 window.location.href = 'index.html';
@@ -110,73 +104,56 @@
 
         function initMap() {
             if (map) return;
-            // ম্যাপের পারফরম্যান্স অপ্টিমাইজেশন
             map = L.map('map', { 
                 zoomControl: false,
-                preferCanvas: true // ক্যানভাস রেন্ডারিং ফাস্টার
+                preferCanvas: true 
             }).setView([23.8103, 90.4125], 15);
 
             L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                 maxZoom: 20, 
-                attribution: 'Google',
-                updateWhenIdle: true, // স্ক্রলিং এর সময় টাইলস লোড বন্ধ রাখা
+                updateWhenIdle: true,
                 keepBuffer: 2
             }).addTo(map);
 
             L.Control.geocoder({ position: 'topright' }).addTo(map);
-
-            document.getElementById('gps-trigger').onclick = () => {
-                map.locate({setView: true, maxZoom: 18});
-            };
-
-            map.on('locationfound', (e) => {
-                L.circle(e.latlng, {radius: e.accuracy / 2}).addTo(map);
-            });
+            document.getElementById('gps-trigger').onclick = () => map.locate({setView: true, maxZoom: 18});
         }
 
         async function loadSpecificLand(id) {
             try {
-                // ম্যাপ টাইলস লোড হওয়ার সাথে সাথে ডাটাবেজ অপারেশন
-                const docRef = doc(db, "lands", id);
-                const docSnap = await getDoc(docRef);
-
+                const docSnap = await getDoc(doc(db, "lands", id));
                 if (docSnap.exists()) {
                     const land = docSnap.data();
                     const landPoints = land.points.map(p => [p.lat, p.lng]);
 
-                    // ম্যাপ ভিউ এবং এলিমেন্ট আপডেট
                     map.setView(landPoints[0], 18);
-
                     if(polygonLayer) map.removeLayer(polygonLayer);
                     polygonLayer = L.polygon(landPoints, { color: '#39FF14', weight: 4, fillOpacity: 0.4 }).addTo(map);
                     
                     landPoints.forEach(p => {
-                        L.circleMarker(p, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 6 }).addTo(map);
+                        L.circleMarker(p, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 5 }).addTo(map);
                     });
 
-                    // UI আপডেট সাথে সাথে
-                    document.getElementById('control-bar').style.display = 'none';
-                    document.getElementById('crosshair-target').style.display = 'none';
-                    const resBox = document.getElementById('result-box');
-                    resBox.classList.add('active');
-                    
+                    // UI Setup for Viewer
                     document.getElementById('res-value').innerText = land.area + " শতাংশ";
                     document.getElementById('res-title').innerText = land.name;
                     document.getElementById('res-desc').innerText = "ফসল: " + (land.cropName || "নাই");
+                    document.getElementById('result-box').classList.add('active');
                     document.getElementById('save-btn').style.display = 'none';
+                    document.getElementById('reset-btn').innerText = "ড্যাশবোর্ডে ফিরুন";
+                    document.getElementById('reset-btn').onclick = () => window.location.href = 'Dashboard.html';
                 }
-            } catch (error) {
-                console.error("Error:", error);
-            }
+            } catch (error) { console.error("Error:", error); }
         }
 
-        // বাকি মাপার ফাংশনগুলো (Add, Undo, Done, Save) হুবহু আগের মতোই থাকবে...
+        // মাপার লজিক (শুধুমাত্র আইডি না থাকলে কাজ করবে)
         document.getElementById('add-btn').onclick = () => {
             const center = map.getCenter();
             points.push([center.lat, center.lng]);
             const marker = L.circleMarker(center, { color: 'white', fillColor: '#39FF14', fillOpacity: 1, radius: 6 }).addTo(map);
             markers.push(marker);
-            updatePolygon();
+            if(polygonLayer) map.removeLayer(polygonLayer);
+            polygonLayer = L.polygon(points, { color: '#39FF14', weight: 3, fillOpacity: 0.3 }).addTo(map);
             if(points.length >= 3) document.getElementById('done-btn').style.display = 'flex';
         };
 
@@ -185,57 +162,24 @@
                 points.pop();
                 const m = markers.pop();
                 if(m) map.removeLayer(m);
-                updatePolygon();
+                if(polygonLayer) map.removeLayer(polygonLayer);
+                polygonLayer = L.polygon(points, { color: '#39FF14', weight: 3, fillOpacity: 0.3 }).addTo(map);
                 if(points.length < 3) document.getElementById('done-btn').style.display = 'none';
             }
         };
 
-        function updatePolygon() {
-            if(polygonLayer) map.removeLayer(polygonLayer);
-            if(points.length > 0) {
-                polygonLayer = L.polygon(points, { color: '#39FF14', weight: 3, fillOpacity: 0.3 }).addTo(map);
-            }
-        }
-
         document.getElementById('done-btn').onclick = () => {
-            if (points.length < 3) return;
-            document.getElementById('control-bar').style.display = 'none';
-            document.getElementById('crosshair-target').style.display = 'none';
             const tPoints = [...points, points[0]];
             const polygon = turf.polygon([tPoints.map(p => [p[1], p[0]])]);
             currentArea = (turf.area(polygon) / 40.4686).toFixed(2);
-            document.getElementById('result-box').classList.add('active');
             document.getElementById('res-value').innerText = currentArea + " শতাংশ";
-            document.getElementById('res-title').innerText = "পরিমাপ সম্পন্ন";
+            document.getElementById('result-box').classList.add('active');
+            document.getElementById('control-bar').style.display = 'none';
+            document.getElementById('crosshair-target').style.display = 'none';
         };
 
-        // Modal triggers are same
-        document.getElementById('save-btn').onclick = () => { if (currentUser) showModal('input-modal'); };
-        document.getElementById('confirm-save-btn').onclick = async () => {
-            const landName = document.getElementById('land-name-input').value.trim();
-            const cropName = document.getElementById('crop-name-input').value;
-            if (!landName || !cropName) return alert("সব তথ্য দিন");
-            const btn = document.getElementById('confirm-save-btn');
-            try {
-                btn.innerText = "সেভ হচ্ছে...";
-                btn.disabled = true;
-                const centerLat = points.reduce((sum, p) => sum + p[0], 0) / points.length;
-                const centerLng = points.reduce((sum, p) => sum + p[1], 0) / points.length;
-                const formattedPoints = points.map(p => ({ lat: p[0], lng: p[1] }));
-                await addDoc(collection(db, "lands"), {
-                    userId: currentUser.uid, name: landName, cropName: cropName, area: Number(currentArea),
-                    lat: centerLat, lng: centerLng, points: formattedPoints,
-                    date: new Date().toLocaleDateString('bn-BD'), timestamp: serverTimestamp()
-                });
-                hideModal('input-modal');
-                showModal('success-modal');
-            } catch (e) { alert(e.message); btn.innerText = "আবার চেষ্টা করুন"; btn.disabled = false; }
-        };
-
-        document.getElementById('cancel-input').onclick = () => hideModal('input-modal');
-        document.getElementById('close-success-btn').onclick = () => hideModal('success-modal');
-        document.getElementById('go-profile').onclick = () => window.location.href = 'Dashboard.html';
         document.getElementById('reset-btn').onclick = () => location.reload();
+        document.getElementById('go-profile').onclick = () => window.location.href = 'Dashboard.html';
     </script>
 </body>
 </html>
