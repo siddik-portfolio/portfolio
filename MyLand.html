@@ -19,16 +19,25 @@
         .land-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.12); }
 
         /* Image Section */
-        .card-banner { width: 100%; height: 150px; position: relative; overflow: hidden; background: #e0e0e0; }
+        .card-banner { width: 100%; height: 160px; position: relative; overflow: hidden; background: #e0e0e0; }
         .card-banner img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
         
-        /* Crop Badge */
-        .crop-badge { 
-            position: absolute; top: 12px; right: 12px;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
-            color: var(--primary); padding: 4px 12px; border-radius: 30px; 
-            font-size: 11px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        /* STEP 1: Custom Crop Dropdown Style */
+        .crop-select-wrapper {
+            position: absolute; top: 12px; right: 12px; z-index: 10;
         }
+        .crop-select {
+            appearance: none; -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+            color: var(--primary); padding: 5px 30px 5px 15px; 
+            border-radius: 30px; border: 1px solid rgba(255,255,255,0.8);
+            font-size: 11px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); outline: none;
+            text-align: center; transition: 0.3s;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232E7D32%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 10px top 50%; background-size: 8px auto;
+        }
+        .crop-select:hover { background-color: white; transform: scale(1.05); }
 
         .card-content { padding: 18px; }
         .card-title { margin: 0; font-size: 18px; color: #2C3E50; font-weight: 700; text-transform: capitalize; }
@@ -86,15 +95,18 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // STEP 1: Added updateDoc and doc imports
+        import { collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ফসলের নাম অনুযায়ী ইমেজের ম্যাপিং
+        // ফসলের নাম অনুযায়ী ইমেজের ম্যাপিং (Updated List)
         const cropImages = {
             'ধান': 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?q=80&w=600&auto=format&fit=crop',
             'গম': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=600&auto=format&fit=crop',
             'ভুট্টা': 'https://images.unsplash.com/photo-1551730459-92db2a308d6a?q=80&w=600&auto=format&fit=crop',
             'আলু': 'https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?q=80&w=600&auto=format&fit=crop',
+            'সরিষা': 'https://plus.unsplash.com/premium_photo-1675715878235-866442651478?q=80&w=600&auto=format&fit=crop',
+            'সবজি': 'https://images.unsplash.com/photo-1595113316349-9fa4eb24f884?q=80&w=600&auto=format&fit=crop',
             'default': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600&auto=format&fit=crop'
         };
 
@@ -103,6 +115,19 @@
             else window.parent.location.href = 'index.html';
         });
 
+        // STEP 1: Function to update crop in Firestore
+        window.updateCropName = async (landId, newCrop) => {
+            try {
+                await updateDoc(doc(db, "lands", landId), {
+                    cropName: newCrop
+                });
+                console.log("Crop updated to:", newCrop);
+            } catch (error) {
+                console.error("Error updating crop:", error);
+                alert("ফসল পরিবর্তন করা সম্ভব হয়নি।");
+            }
+        };
+
         function setupRealtimeLands(uid) {
             const container = document.getElementById('land-list');
             const q = query(collection(db, "lands"), where("userId", "==", uid));
@@ -110,7 +135,7 @@
             onSnapshot(q, (snapshot) => {
                 container.innerHTML = "";
                 if (snapshot.empty) {
-                    container.innerHTML = "<p style='text-align:center; grid-column:1/-1; color:#888;'>কোনো জমি পাওয়া যায়নি।</p>";
+                    container.innerHTML = "<p style='text-align:center; grid-column:1/-1; color:#888;'>কোনো জমি পাওয়া যায়নি।</p>";
                     return;
                 }
 
@@ -119,15 +144,27 @@
                     const id = docSnap.id;
                     const moisture = data.moistureLevel || Math.floor(Math.random() * 30) + 40;
                     
-                    // ফসলের নাম অনুযায়ী ইমেজ বাছাই
+                    // ফসলের নাম অনুযায়ী ইমেজ বাছাই
                     const cropType = data.cropName ? data.cropName.trim() : 'default';
+                    // যদি লিস্টে না থাকে তাহলে ডিফল্ট
                     const imageUrl = cropImages[cropType] || cropImages['default'];
 
                     container.innerHTML += `
                         <div class="land-card">
                             <div class="card-banner">
-                                <img src="${imageUrl}" alt="${cropType}" onerror="this.src='${cropImages.default}'">
-                                <div class="crop-badge">${cropType}</div>
+                                <img src="${imageUrl}" alt="${cropType}">
+                                
+                                <div class="crop-select-wrapper">
+                                    <select class="crop-select" onchange="updateCropName('${id}', this.value)">
+                                        <option value="${cropType}" selected hidden>${cropType}</option>
+                                        <option value="ধান">ধান (Paddy)</option>
+                                        <option value="গম">গম (Wheat)</option>
+                                        <option value="ভুট্টা">ভুট্টা (Corn)</option>
+                                        <option value="আলু">আলু (Potato)</option>
+                                        <option value="সরিষা">সরিষা (Mustard)</option>
+                                        <option value="সবজি">সবজি (Veg)</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="card-content">
@@ -150,7 +187,7 @@
 
                                 <div class="btn-flex">
                                     <button class="order-btn" onclick="openComingSoon()">
-                                        <i class="fas fa-paper-plane"></i> সার্ভিস অর্ডার
+                                        <i class="fas fa-paper-plane"></i> সার্ভিস নিন
                                     </button>
                                     <button class="view-btn" onclick="window.parent.location.href='Map.html?id=${id}'">
                                         <i class="fas fa-map-marker-alt"></i>
