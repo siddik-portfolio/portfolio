@@ -66,17 +66,41 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* 3D POPUP */
+        /* 3D POPUP (Updated for Step 2) */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
             display: none; justify-content: center; align-items: center; z-index: 1000;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.9); border-radius: 25px; padding: 30px;
-            width: 280px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.95); border-radius: 25px; padding: 25px;
+            width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.4); transform: perspective(1000px);
         }
+
+        /* STEP 2: Service Grid Styles */
+        .service-grid {
+            display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px;
+        }
+        .service-option {
+            background: rgba(240, 242, 245, 0.6);
+            border: 1px solid rgba(0,0,0,0.05);
+            padding: 12px 15px; border-radius: 15px;
+            display: flex; align-items: center; gap: 15px;
+            cursor: pointer; transition: 0.3s; text-align: left;
+        }
+        .service-option:hover {
+            background: var(--primary); color: white; transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.2);
+        }
+        .service-icon {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.8);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: var(--primary); transition: 0.3s;
+        }
+        .service-option:hover .service-icon { background: rgba(255,255,255,0.2); color: white; }
+        .service-option h4 { margin: 0; font-size: 15px; font-weight: 600; }
+        .service-option p { margin: 2px 0 0; font-size: 11px; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -84,22 +108,48 @@
     <div id="land-list" class="land-grid">
         </div>
 
-    <div id="csModal" class="modal-overlay" onclick="closeModal()">
+    <div id="serviceModal" class="modal-overlay" onclick="closeModal()">
         <div class="glass-card" onclick="event.stopPropagation()">
-            <i class="fas fa-tools" style="font-size: 50px; color: var(--primary); margin-bottom: 15px;"></i>
-            <h2 style="margin:0;">Coming Soon!</h2>
-            <p style="color:#666; font-size:13px; margin-top:10px;">এই ফিচারটি খুব শীঘ্রই আপনার জন্য উন্মুক্ত করা হবে।</p>
-            <button style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:10px; margin-top:15px; width:100%; cursor:pointer;" onclick="closeModal()">বন্ধ করুন</button>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h3 style="margin:0; color: #2C3E50;">সার্ভিস নির্বাচন করুন</h3>
+                <i class="fas fa-times" onclick="closeModal()" style="cursor:pointer; color:#999; padding:5px;"></i>
+            </div>
+            <p style="font-size: 12px; color: #7F8C8D; text-align: left; margin-bottom:15px;">আপনার জমির জন্য উপযুক্ত সেবাটি বেছে নিন:</p>
+
+            <div class="service-grid">
+                <div class="service-option" onclick="selectService('drone')">
+                    <div class="service-icon"><i class="fas fa-helicopter"></i></div>
+                    <div>
+                        <h4>ড্রোন স্প্রে</h4>
+                        <p>সার ও কীটনাশক প্রয়োগ</p>
+                    </div>
+                </div>
+
+                <div class="service-option" onclick="selectService('plow')">
+                    <div class="service-icon"><i class="fas fa-tractor"></i></div>
+                    <div>
+                        <h4>স্মার্ট হালচাষ</h4>
+                        <p>আধুনিক মেশিনে জমি তৈরি</p>
+                    </div>
+                </div>
+
+                <div class="service-option" onclick="selectService('harvest')">
+                    <div class="service-icon"><i class="fas fa-wheat-awn"></i></div>
+                    <div>
+                        <h4>ফসল কাটা</h4>
+                        <p>দ্রুত ও নিরাপদে ফসল সংগ্রহ</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        // STEP 1: Added updateDoc and doc imports
         import { collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ফসলের নাম অনুযায়ী ইমেজের ম্যাপিং (Updated List)
+        // Step 1: Crop Images Mapping
         const cropImages = {
             'ধান': 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?q=80&w=600&auto=format&fit=crop',
             'গম': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=600&auto=format&fit=crop',
@@ -110,21 +160,22 @@
             'default': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600&auto=format&fit=crop'
         };
 
+        // Variable to store selected land for Step 4
+        window.currentSelectedLand = null;
+
         onAuthStateChanged(auth, (user) => {
             if (user) setupRealtimeLands(user.uid);
             else window.parent.location.href = 'index.html';
         });
 
-        // STEP 1: Function to update crop in Firestore
+        // Step 1: Update Crop Name
         window.updateCropName = async (landId, newCrop) => {
             try {
-                await updateDoc(doc(db, "lands", landId), {
-                    cropName: newCrop
-                });
+                await updateDoc(doc(db, "lands", landId), { cropName: newCrop });
                 console.log("Crop updated to:", newCrop);
             } catch (error) {
                 console.error("Error updating crop:", error);
-                alert("ফসল পরিবর্তন করা সম্ভব হয়নি।");
+                alert("ফসল পরিবর্তন করা সম্ভব হয়নি।");
             }
         };
 
@@ -143,17 +194,13 @@
                     const data = docSnap.data();
                     const id = docSnap.id;
                     const moisture = data.moistureLevel || Math.floor(Math.random() * 30) + 40;
-                    
-                    // ফসলের নাম অনুযায়ী ইমেজ বাছাই
                     const cropType = data.cropName ? data.cropName.trim() : 'default';
-                    // যদি লিস্টে না থাকে তাহলে ডিফল্ট
                     const imageUrl = cropImages[cropType] || cropImages['default'];
 
                     container.innerHTML += `
                         <div class="land-card">
                             <div class="card-banner">
                                 <img src="${imageUrl}" alt="${cropType}">
-                                
                                 <div class="crop-select-wrapper">
                                     <select class="crop-select" onchange="updateCropName('${id}', this.value)">
                                         <option value="${cropType}" selected hidden>${cropType}</option>
@@ -186,7 +233,7 @@
                                 </div>
 
                                 <div class="btn-flex">
-                                    <button class="order-btn" onclick="openComingSoon()">
+                                    <button class="order-btn" onclick="openServiceModal('${id}', '${data.name}')">
                                         <i class="fas fa-paper-plane"></i> সার্ভিস নিন
                                     </button>
                                     <button class="view-btn" onclick="window.parent.location.href='Map.html?id=${id}'">
@@ -199,8 +246,21 @@
             });
         }
 
-        window.openComingSoon = function() { document.getElementById('csModal').style.display = 'flex'; }
-        window.closeModal = function() { document.getElementById('csModal').style.display = 'none'; }
+        // STEP 2: Modal Functions
+        window.openServiceModal = function(landId, landName) {
+            window.currentSelectedLand = { id: landId, name: landName };
+            document.getElementById('serviceModal').style.display = 'flex';
+        }
+
+        window.closeModal = function() {
+            document.getElementById('serviceModal').style.display = 'none';
+        }
+
+        window.selectService = function(type) {
+            console.log("Selected:", type, "for", window.currentSelectedLand);
+            // This is just a placeholder for Step 3
+            alert('Step 3 Loading: ' + type.toUpperCase() + ' logic coming next!');
+        }
     </script>
 </body>
 </html>
