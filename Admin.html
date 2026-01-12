@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agri Pro | Super Admin Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .order-card {
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Access Control Classes */
+        .hidden-content { display: none; }
+    </style>
+</head>
+<body class="p-4 md:p-8 text-white">
+
+    <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+        <div class="glass-panel p-10 text-center max-w-md w-full mx-4">
+            <i class="fas fa-lock text-5xl text-yellow-400 mb-6"></i>
+            <h2 class="text-3xl font-bold mb-2">Restricted Access</h2>
+            <p class="text-gray-300 mb-8">Please login with your Admin Account</p>
+            <button id="loginBtn" class="w-full bg-white text-black font-bold py-3 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-200 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20">
+                Sign in with Google
+            </button>
+            <p id="errorMsg" class="text-red-400 mt-4 hidden">You are not authorized as an Admin!</p>
+        </div>
+    </div>
+
+    <div id="adminPanel" class="max-w-7xl mx-auto hidden-content">
+        <header class="glass-panel p-6 mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">Agri Pro <span class="text-yellow-400">Admin</span></h1>
+                <p class="text-sm text-gray-200">Super Controller Dashboard</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden md:block">
+                    <p class="font-semibold" id="adminNameDisplay">Admin</p>
+                    <button id="logoutBtn" class="text-[10px] text-red-400 hover:underline">Logout Account</button>
+                </div>
+                <div class="h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden">
+                    <img id="adminPhoto" src="" alt="Admin">
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass-panel p-6 flex items-center gap-4">
+                <div class="bg-blue-500/30 p-4 rounded-xl"><i class="fas fa-shopping-cart text-2xl"></i></div>
+                <div>
+                    <p class="text-gray-300">Total Orders</p>
+                    <h3 class="text-2xl font-bold" id="totalOrdersCount">0</h3>
+                </div>
+            </div>
+            <div class="glass-panel p-6 flex items-center gap-4">
+                <div class="bg-yellow-500/30 p-4 rounded-xl"><i class="fas fa-clock text-2xl"></i></div>
+                <div>
+                    <p class="text-gray-300">Pending Requests</p>
+                    <h3 class="text-2xl font-bold" id="pendingOrdersCount">0</h3>
+                </div>
+            </div>
+            <div class="glass-panel p-6 flex items-center gap-4">
+                <div class="bg-green-500/30 p-4 rounded-xl"><i class="fas fa-check-circle text-2xl"></i></div>
+                <div>
+                    <p class="text-gray-300">Completed</p>
+                    <h3 class="text-2xl font-bold" id="completedOrdersCount">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-list-ul text-yellow-400"></i> Active Service Requests
+            </h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-300">
+                            <th class="pb-4 font-medium">Farmer Info</th>
+                            <th class="pb-4 font-medium">Service Type</th>
+                            <th class="pb-4 font-medium">Land Details</th>
+                            <th class="pb-4 font-medium">Status</th>
+                            <th class="pb-4 font-medium text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTableBody" class="divide-y divide-white/5"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, query, onSnapshot, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- সেফটি সেটিংস ---
+        const ALLOWED_ADMIN_EMAIL = "your-email@gmail.com"; // এখানে আপনার ইমেইল দিন
+
+        const authOverlay = document.getElementById('authOverlay');
+        const adminPanel = document.getElementById('adminPanel');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // ১. লগইন লজিক
+        loginBtn.onclick = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                alert("Login Error: " + error.message);
+            }
+        };
+
+        // ২. লগআউট লজিক
+        logoutBtn.onclick = () => signOut(auth);
+
+        // ৩. অথেনটিকেশন স্টেট চেক
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email === ALLOWED_ADMIN_EMAIL) {
+                authOverlay.classList.add('hidden');
+                adminPanel.classList.remove('hidden-content');
+                document.getElementById('adminNameDisplay').innerText = user.displayName;
+                document.getElementById('adminPhoto').src = user.photoURL;
+                initOrderListener(); // ডাটা রিড করা শুরু
+            } else if (user) {
+                errorMsg.classList.remove('hidden');
+                setTimeout(() => signOut(auth), 2000);
+            } else {
+                authOverlay.classList.remove('hidden');
+                adminPanel.classList.add('hidden-content');
+            }
+        });
+
+        // ৪. রিয়েল-টাইম ডাটা লিসেনার (আপনার আগের লজিক)
+        function initOrderListener() {
+            const q = query(collection(db, "orders"));
+            onSnapshot(q, (snapshot) => {
+                let content = "";
+                let pendingCount = 0;
+                let completedCount = 0;
+                
+                snapshot.forEach((orderDoc) => {
+                    const order = orderDoc.data();
+                    const id = orderDoc.id;
+                    if(order.status === 'pending') pendingCount++;
+                    if(order.status === 'completed') completedCount++;
+
+                    content += `
+                        <tr class="order-card">
+                            <td class="py-4">
+                                <p class="font-semibold">${order.userName || 'Anonymous'}</p>
+                                <p class="text-xs text-gray-400">UID: ${order.userId ? order.userId.substring(0,8) : 'N/A'}...</p>
+                            </td>
+                            <td class="py-4 font-medium text-blue-300">${order.serviceType}</td>
+                            <td class="py-4 text-sm text-gray-200">${order.landName || 'Not Specified'}</td>
+                            <td class="py-4">
+                                <span class="px-3 py-1 rounded-full text-xs ${getStatusClass(order.status)}">
+                                    ${order.status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td class="py-4 text-center">
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="updateOrderStatus('${id}', 'processing')" class="p-2 hover:bg-yellow-500/20 text-yellow-400"><i class="fas fa-spinner"></i></button>
+                                    <button onclick="updateOrderStatus('${id}', 'completed')" class="p-2 hover:bg-green-500/20 text-green-400"><i class="fas fa-check"></i></button>
+                                    <button onclick="deleteOrder('${id}')" class="p-2 hover:bg-red-500/20 text-red-400"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+                document.getElementById('orderTableBody').innerHTML = content;
+                document.getElementById('totalOrdersCount').innerText = snapshot.size;
+                document.getElementById('pendingOrdersCount').innerText = pendingCount;
+                document.getElementById('completedOrdersCount').innerText = completedCount;
+            });
+        }
+
+        // আপনার আগের হেল্পার ফাংশনগুলো
+        function getStatusClass(status) {
+            if(status === 'pending') return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+            if(status === 'processing') return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+            if(status === 'completed') return 'bg-green-500/20 text-green-400 border border-green-500/30';
+            return 'bg-gray-500/20 text-gray-400';
+        }
+
+        window.updateOrderStatus = async (id, newStatus) => {
+            await updateDoc(doc(db, "orders", id), { status: newStatus });
+        };
+
+        window.deleteOrder = async (id) => {
+            if(confirm('Cancel order?')) await deleteDoc(doc(db, "orders", id));
+        };
+    </script>
+</body>
+</html>
