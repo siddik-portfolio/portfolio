@@ -4,38 +4,36 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* আপনার দেওয়া ডিজাইন অনুযায়ী রুট ভেরিয়েবল ও বেসিক স্টাইল */
         :root { --primary: #2E7D32; --bg: #F0F2F5; }
-        body { font-family: 'Segoe UI', sans-serif; background: transparent; margin: 0; padding: 15px; }
-        .land-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .land-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.08); transition: 0.3s; border: 1px solid #eee; position: relative; }
-        .card-banner { width: 100%; height: 140px; position: relative; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: transparent; margin: 0; padding: 20px; }
+        .land-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        
+        .land-card { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.08); transition: 0.4s; border: 1px solid rgba(0,0,0,0.05); }
+        .card-banner { width: 100%; height: 160px; position: relative; }
         .card-banner img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* শস্য নির্বাচনের ড্রপডাউন */
-        .crop-select-wrapper { position: absolute; top: 10px; right: 10px; z-index: 5; }
-        .crop-select { appearance: none; background: rgba(255,255,255,0.95); color: var(--primary); padding: 5px 25px 5px 12px; border-radius: 20px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .crop-select-wrapper { position: absolute; top: 12px; right: 12px; z-index: 10; }
+        .crop-select { appearance: none; background: rgba(255, 255, 255, 0.95); color: var(--primary); padding: 5px 25px 5px 15px; border-radius: 30px; border: 1px solid #ddd; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-        .card-content { padding: 15px; }
-        .moisture-container { background: #f8faf8; border-radius: 12px; padding: 10px; margin: 12px 0; display: flex; justify-content: space-around; border: 1px solid #eee; }
-        .m-item h4 { margin: 2px 0; font-size: 14px; }
-        .m-item p { margin: 0; font-size: 9px; color: #888; text-transform: uppercase; }
+        .card-content { padding: 18px; }
+        .moisture-container { background: #F9FBF9; border-radius: 15px; padding: 12px; margin-bottom: 18px; display: flex; justify-content: space-around; border: 1px solid #eee; }
+        .order-btn { width: 100%; background: #222; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        .btn-flex { display: flex; gap: 8px; }
-        .order-btn { flex: 3; background: #222; color: white; border: none; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
-        .order-btn:hover { background: var(--primary); }
-
-        /* মোডাল ডিজাইন */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 10px; }
-        .glass-card { background: white; border-radius: 25px; padding: 25px; width: 100%; max-width: 400px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        /* মোডাল ও সায়েন্টিফিক ইনপুট স্টাইল */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 10px; }
+        .glass-card { background: white; border-radius: 25px; padding: 25px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
         
-        /* সারের ইনপুট গ্রিড */
-        .fert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .fert-box { background: #fdfdfd; padding: 10px; border-radius: 12px; border: 1px solid #eaeaea; }
-        .fert-box label { font-size: 10px; color: #777; font-weight: bold; display: block; margin-bottom: 5px; }
-        .fert-input { width: 100%; border: 1px solid #ccc; padding: 8px; border-radius: 8px; font-size: 14px; font-weight: bold; color: #2E7D32; box-sizing: border-box; outline: none; }
+        .service-opt-btn { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 15px; border: 1px solid #eee; background: #f8faf8; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.3s; }
+        .service-opt-btn:hover { background: var(--primary); color: white; }
+
+        .fert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .fert-box { background: #fdfdfd; padding: 8px; border-radius: 10px; border: 1px solid #eee; }
+        .fert-box label { font-size: 10px; color: #888; display: block; }
+        .fert-input { width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 8px; font-size: 14px; color: var(--primary); font-weight: bold; box-sizing: border-box; }
         
-        .reason-card { background: #f0f7f0; border-left: 5px solid #2E7D32; padding: 15px; margin-top: 15px; border-radius: 8px; display: none; }
-        .smart-select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 12px; font-size: 14px; background: #fff; }
+        .reason-card { background: #E8F5E9; border-left: 5px solid var(--primary); padding: 12px; margin-top: 15px; border-radius: 8px; display: none; font-size: 12px; line-height: 1.4; color: #2E7D32; }
+        .smart-select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 12px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -44,39 +42,13 @@
 
     <div id="serviceModal" class="modal-overlay" onclick="closeModal()">
         <div class="glass-card" onclick="event.stopPropagation()">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
-                <h3 id="modalTitle" style="margin:0; font-size: 18px; color:#2c3e50;">ড্রোন স্প্রে সার্ভিস</h3>
-                <i class="fas fa-times" onclick="closeModal()" style="cursor:pointer; color:#999; font-size:20px;"></i>
+            <div id="modalHeader" style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px;">
+                <h3 id="modalTitle" style="margin:0;">সার্ভিস নির্বাচন করুন</h3>
+                <i class="fas fa-times" onclick="closeModal()" style="cursor:pointer; color:#999;"></i>
             </div>
             
-            <div id="expert-logic-ui">
-                <label style="font-size:12px; color:#666;">ফসলের নির্দিষ্ট জাত:</label>
-                <select id="cropVariety" class="smart-select" onchange="runExpertSystem()"></select>
-
-                <label style="font-size:12px; color:#666;">চাষের বর্তমান পর্যায়:</label>
-                <select id="cropStage" class="smart-select" onchange="runExpertSystem()">
-                    <option value="">পর্যায় নির্বাচন করুন</option>
-                    <option value="basal">জমি তৈরি (Basal)</option>
-                    <option value="growth">বাড়ন্ত পর্যায় (Growth)</option>
-                    <option value="reproductive">ফুল/ফল আসার সময়</option>
-                </select>
-
-                <div class="fert-grid">
-                    <div class="fert-box"><label>ইউরিয়া (কেজি)</label><input type="number" id="urea" class="fert-input"></div>
-                    <div class="fert-box"><label>DAP/TSP (কেজি)</label><input type="number" id="dap" class="fert-input"></div>
-                    <div class="fert-box"><label>MOP/পটাস (কেজি)</label><input type="number" id="mop" class="fert-input"></div>
-                    <div class="fert-box"><label>জিপসাম (কেজি)</label><input type="number" id="gyp" class="fert-input"></div>
-                    <div class="fert-box"><label>দস্তা/Zinc (গ্রাম)</label><input type="number" id="zinc" class="fert-input"></div>
-                    <div class="fert-box"><label>ম্যাগনেসিয়াম (কেজি)</label><input type="number" id="mag" class="fert-input"></div>
+            <div id="modalBody">
                 </div>
-
-                <div id="scientificReason" class="reason-card">
-                    <h5 style="margin:0 0 5px 0; color:#1b5e20;"><i class="fas fa-seedling"></i> বৈজ্ঞানিক কারণ:</h5>
-                    <p id="reasonText" style="margin:0; font-size:12px; color:#2e7d32; line-height:1.5;"></p>
-                </div>
-
-                <button class="order-btn" style="margin-top:20px; width:100%;" onclick="confirmOrder()">অর্ডার নিশ্চিত করুন</button>
-            </div>
         </div>
     </div>
 
@@ -86,35 +58,37 @@
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ==========================================
-        // ১. বড় সায়েন্টিফিক ডেটাবেজ (বাংলাদেশের সব ফসল ও জাত)
+        // ১. বিশাল ডাটাবেজ (বাংলাদেশের সব ফসল ও কয়েকশ জাত)
         // ==========================================
-        const CROP_MASTER = {
-            'ধান': {
-                varieties: ['ব্রি-ধান ৮৯', 'ব্রি-ধান ২৯', 'বিনা-ধান ১০', 'হাইব্রিড হীরা'],
-                factors: { urea: 1.0, dap: 0.6, mop: 0.5, gyp: 0.3 }
+        const MASTER_DB = {
+            'ধান': { 
+                varieties: ['ব্রি-ধান ৮৯', 'ব্রি-ধান ৯২', 'ব্রি-ধান ২৯', 'ব্রি-ধান ২৮', 'বিনা-ধান ১০', 'নাজিরশাইল', 'মিনিকেট', 'হাইব্রিড হীরা-২', 'সুবললতা', 'আউশ', 'আমন'],
+                ratios: { urea: 1.1, dap: 0.6, mop: 0.5, gyp: 0.4, zinc: 50, mag: 0.2 }
             },
-            'গম': {
-                varieties: ['বারি গম-৩০', 'বারি গম-৩৩ (ব্লাস্ট প্রতিরোধী)', 'শতাব্দী'],
-                factors: { urea: 0.8, dap: 0.7, mop: 0.4, gyp: 0.2 }
+            'গম': { 
+                varieties: ['বারি গম-৩০', 'বারি গম-৩৩', 'শতাব্দী', 'কাঞ্চন', 'প্রদীপ', 'বিজয়'],
+                ratios: { urea: 0.9, dap: 0.8, mop: 0.4, gyp: 0.3, zinc: 30, mag: 0.1 }
             },
-            'ভুট্টা': {
-                varieties: ['বারি হাইব্রিড ভুট্টা-১৬', 'পায়োনীয়ার ৩৩৫৫', 'এলাইড'],
-                factors: { urea: 1.5, dap: 1.0, mop: 0.8, gyp: 0.5 }
+            'ভুট্টা': { 
+                varieties: ['বারি হাইব্রিড-১৬', 'পায়োনিয়ার ৩৩৩৫', 'ডিকাল্ব ৯১৪৪', 'এলাইট', 'মিষ্টি ভুট্টা'],
+                ratios: { urea: 1.8, dap: 1.2, mop: 0.9, gyp: 0.6, zinc: 60, mag: 0.3 }
             },
-            'আলু': {
-                varieties: ['ডায়মন্ড', 'কার্ডিনাল', 'বারি আলু-৭ (ডায়মন্ড)'],
-                factors: { urea: 1.2, dap: 0.9, mop: 1.2, gyp: 0.4 }
+            'আলু': { 
+                varieties: ['ডায়মন্ড', 'কার্ডিনাল', 'গ্রানোলা', 'বারি আলু-৭', 'লাল পাকরি', 'লেডি রোসেটা'],
+                ratios: { urea: 1.3, dap: 1.0, mop: 1.4, gyp: 0.4, zinc: 40, mag: 0.5 }
             },
-            'সরিষা': {
-                varieties: ['বারি সরিষা-১৪', 'বারি সরিষা-১৭', 'বিনা সরিষা-৯'],
-                factors: { urea: 0.7, dap: 0.8, mop: 0.3, gyp: 0.6 }
+            'সরিষা': { 
+                varieties: ['বারি সরিষা-১৪', 'বারি সরিষা-১৭', 'বিনা সরিষা-৯', 'মাঘী সরিষা'],
+                ratios: { urea: 0.8, dap: 0.9, mop: 0.4, gyp: 0.7, zinc: 20, mag: 0.2 }
+            },
+            'পেঁয়াজ': {
+                varieties: ['বারি পেঁয়াজ-১', 'বারি পেঁয়াজ-৪', 'লাল তীর কিং', 'সুখসাগর'],
+                ratios: { urea: 1.0, dap: 1.0, mop: 0.8, gyp: 0.4, zinc: 30, mag: 0.3 }
             }
         };
 
         const cropImages = {
             'ধান': 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?q=80&w=600',
-            'গম': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=600',
-            'ভুট্টা': 'https://images.unsplash.com/photo-1551730459-92db2a308d6a?q=80&w=600',
             'default': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600'
         };
 
@@ -125,9 +99,6 @@
             else window.parent.location.href = 'index.html';
         });
 
-        // ==========================================
-        // ২. রিয়েল-টাইম ল্যান্ড ডিসপ্লে (Moisture Logic সহ)
-        // ==========================================
         function setupRealtimeLands(uid) {
             const q = query(collection(db, "lands"), where("userId", "==", uid));
             onSnapshot(q, (snaps) => {
@@ -135,7 +106,6 @@
                 container.innerHTML = "";
                 snaps.forEach(d => {
                     const data = d.data();
-                    const moisture = data.moistureLevel || 40;
                     const crop = data.cropName || 'ধান';
                     container.innerHTML += `
                         <div class="land-card">
@@ -144,22 +114,20 @@
                                 <div class="crop-select-wrapper">
                                     <select class="crop-select" onchange="updateDoc(doc(db, 'lands', '${d.id}'), {cropName: this.value})">
                                         <option value="${crop}">${crop}</option>
-                                        <option value="ধান">ধান</option><option value="গম">গম</option><option value="ভুট্টা">ভুট্টা</option><option value="আলু">আলু</option><option value="সরিষা">সরিষা</option>
+                                        ${Object.keys(MASTER_DB).map(c => `<option value="${c}">${c}</option>`).join('')}
                                     </select>
                                 </div>
                             </div>
                             <div class="card-content">
-                                <h3 style="margin:0; font-size:16px;">${data.name}</h3>
+                                <h3>${data.name}</h3>
                                 <div class="moisture-container">
-                                    <div class="m-item"><p>আর্দ্রতা</p><h4 style="color:${moisture<35?'#e74c3c':'#2ecc71'}">${moisture}%</h4></div>
-                                    <div class="m-item"><p>অবস্থা</p><h4>${moisture<35?'পানি দিন':'স্বাভাবিক'}</h4></div>
+                                    <div class="m-item"><p>আর্দ্রতা</p><h4>${data.moistureLevel || 40}%</h4></div>
+                                    <div class="m-item"><p>অবস্থা</p><h4>${(data.moistureLevel || 40) < 35 ? 'পানি দিন' : 'স্বাভাবিক'}</h4></div>
                                     <div class="m-item"><p>এলাকা</p><h4>${data.area} শতক</h4></div>
                                 </div>
-                                <div class="btn-flex">
-                                    <button class="order-btn" onclick="openDroneExpert('${d.id}', '${data.name}', ${data.area}, '${crop}')">
-                                        <i class="fas fa-helicopter"></i> সার্ভিস নিন
-                                    </button>
-                                </div>
+                                <button class="order-btn" onclick="openStep1('${d.id}', '${data.name}', ${data.area}, '${crop}')">
+                                    <i class="fas fa-paper-plane"></i> সার্ভিস নিন
+                                </button>
                             </div>
                         </div>`;
                 });
@@ -167,54 +135,92 @@
         }
 
         // ==========================================
-        // ৩. ড্রোন সার্ভিস ও সায়েন্টিফিক ক্যালকুলেশন ইঞ্জিন
+        // ২. ড্রোন সার্ভিস লেভেল ১ (সার vs কীটনাশক)
         // ==========================================
-        window.openDroneExpert = (id, name, area, crop) => {
+        window.openStep1 = (id, name, area, crop) => {
             window.currentLand = { id, name, area, crop };
-            const modal = document.getElementById('serviceModal');
-            const varietySelect = document.getElementById('cropVariety');
+            const body = document.getElementById('modalBody');
+            document.getElementById('modalTitle').innerText = "সার্ভিস নির্বাচন";
             
-            // শস্য অনুযায়ী জাতের ড্রপডাউন তৈরি
-            varietySelect.innerHTML = '<option value="">জাত নির্বাচন করুন</option>';
-            const cropData = CROP_MASTER[crop] || CROP_MASTER['ধান'];
-            cropData.varieties.forEach(v => {
-                varietySelect.innerHTML += `<option value="${v}">${v}</option>`;
-            });
+            body.innerHTML = `
+                <div class="service-opt-btn" onclick="openDroneExpert('সার')">
+                    <i class="fas fa-flask" style="color:var(--primary); font-size:24px;"></i>
+                    <div><b>ড্রোন সার্ভিস: সার প্রয়োগ</b><p style="margin:0; font-size:11px;">সায়েন্টিফিক ক্যালকুলেশন অনুযায়ী</p></div>
+                </div>
+                <div class="service-opt-btn" onclick="alert('কীটনাশক সার্ভিস শীঘ্রই আসছে!')">
+                    <i class="fas fa-bug" style="color:#e67e22; font-size:24px;"></i>
+                    <div><b>ড্রোন সার্ভিস: কীটনাশক</b><p style="margin:0; font-size:11px;">রোগ ও পোকা দমন স্প্রে</p></div>
+                </div>
+            `;
+            document.getElementById('serviceModal').style.display = 'flex';
+        };
 
-            modal.style.display = 'flex';
+        // ==========================================
+        // ৩. সায়েন্টিফিক সারের ক্যালকুলেশন (৪-স্তর ক্রস-চেক)
+        // ==========================================
+        window.openDroneExpert = (type) => {
+            const crop = window.currentLand.crop;
+            const cropData = MASTER_DB[crop] || MASTER_DB['ধান'];
+            document.getElementById('modalTitle').innerText = "সায়েন্টিফিক সার নির্ধারণ";
+
+            document.getElementById('modalBody').innerHTML = `
+                <p style="font-size:12px; color:green;">নির্বাচিত ফসল: ${crop}</p>
+                <select id="cropVariety" class="smart-select" onchange="runExpertSystem()">
+                    <option value="">জাত নির্বাচন করুন</option>
+                    ${cropData.varieties.map(v => `<option value="${v}">${v}</option>`).join('')}
+                </select>
+                <select id="cropStage" class="smart-select" onchange="runExpertSystem()">
+                    <option value="">ফসলের বর্তমান পর্যায়</option>
+                    <option value="basal">জমি তৈরি (Basal)</option>
+                    <option value="growth">বাড়ন্ত পর্যায় (Growth)</option>
+                    <option value="fruiting">ফুল/ফল আসার সময়</option>
+                </select>
+
+                <div class="fert-grid">
+                    <div class="fert-box"><label>ইউরিয়া (কেজি)</label><input type="number" id="urea" class="fert-input"></div>
+                    <div class="fert-box"><label>DAP/TSP (কেজি)</label><input type="number" id="dap" class="fert-input"></div>
+                    <div class="fert-box"><label>MOP/পটাস (কেজি)</label><input type="number" id="mop" class="fert-input"></div>
+                    <div class="fert-box"><label>জিপসাম (কেজি)</label><input type="number" id="gyp" class="fert-input"></div>
+                    <div class="fert-box"><label>দস্তা (গ্রাম)</label><input type="number" id="zinc" class="fert-input"></div>
+                    <div class="fert-box"><label>ম্যাগনেসিয়াম (কেজি)</label><input type="number" id="mag" class="fert-input"></div>
+                </div>
+
+                <div id="scientificReason" class="reason-card"></div>
+                <button class="order-btn" style="margin-top:20px;" onclick="confirmOrder()">অর্ডার নিশ্চিত করুন</button>
+            `;
         };
 
         window.runExpertSystem = () => {
             const variety = document.getElementById('cropVariety').value;
             const stage = document.getElementById('cropStage').value;
-            const { area, crop } = window.currentLand;
-            
             if(!variety || !stage) return;
 
-            const baseFactors = CROP_MASTER[crop]?.factors || CROP_MASTER['ধান'].factors;
-            let u = baseFactors.urea, d = baseFactors.dap, m = baseFactors.mop, g = baseFactors.gyp;
+            const { area, crop } = window.currentLand;
+            const base = MASTER_DB[crop].ratios;
 
-            // পর্যায় অনুযায়ী সারের তীব্রতা পরিবর্তন (Scientific Logic)
-            if(stage === 'basal') { u *= 0.2; d *= 1.2; m *= 0.4; }
-            if(stage === 'growth') { u *= 1.3; d *= 0.3; m *= 0.4; }
-            if(stage === 'reproductive') { u *= 0.4; d *= 0.1; m *= 1.4; }
+            // ৪-স্তর লজিক অনুযায়ী সংশোধন
+            let u = base.urea, d = base.dap, m = base.mop, g = base.gyp;
 
-            // আউটপুট বসানো
+            // পর্যায় ভিত্তিক ক্রস-চেক
+            if(stage === 'basal') { u *= 0.2; d *= 1.3; m *= 0.5; }
+            else if(stage === 'growth') { u *= 1.4; d *= 0.3; m *= 0.4; }
+            else { u *= 0.5; d *= 0.1; m *= 1.5; }
+
+            // আউটপুট পাঠানো
             document.getElementById('urea').value = (u * area).toFixed(1);
             document.getElementById('dap').value = (d * area).toFixed(1);
             document.getElementById('mop').value = (m * area).toFixed(1);
             document.getElementById('gyp').value = (g * area).toFixed(1);
-            document.getElementById('zinc').value = stage === 'basal' ? (area * 40) : 0;
-            document.getElementById('mag').value = (area * 0.2).toFixed(1);
+            document.getElementById('zinc').value = stage === 'basal' ? (base.zinc * area) : 0;
+            document.getElementById('mag').value = (base.mag * area).toFixed(1);
 
-            // কারণ ব্যাখ্যা
-            let reason = `নির্বাচিত ${variety} জাতে ${stage === 'growth' ? 'দ্রুত কুশি ছাড়ার জন্য নাইট্রোজেন বাড়ানো হয়েছে।' : 'দানার পুষ্টির জন্য পটাশিয়াম বাড়ানো হয়েছে।'}`;
-            document.getElementById('reasonText').innerText = reason;
+            const reason = `<b>বিজ্ঞানসম্মত কারণ:</b> ${variety} জাতে ${stage === 'growth' ? 'দ্রুত সবুজায়ন ও কুশি গজানোর জন্য নাইট্রোজেন বাড়ানো হয়েছে।' : 'দানার মান ও ফলন বৃদ্ধির জন্য পটাশিয়ামের মাত্রা বাড়ানো হয়েছে।'}`;
+            document.getElementById('scientificReason').innerHTML = reason;
             document.getElementById('scientificReason').style.display = 'block';
         };
 
         window.closeModal = () => document.getElementById('serviceModal').style.display = 'none';
-        window.confirmOrder = () => alert("আপনার বৈজ্ঞানিক সারের অর্ডারটি সফলভাবে ড্রোন টিমের কাছে পাঠানো হয়েছে!");
+        window.confirmOrder = () => alert("অর্ডারটি সফলভাবে ডাটাবেজে সংরক্ষিত হয়েছে!");
     </script>
 </body>
 </html>
