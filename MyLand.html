@@ -69,7 +69,7 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { collection, query, where, onSnapshot, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, updateDoc, doc, addDoc, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const CROP_DB = {
@@ -82,14 +82,14 @@
         };
 
         const PEST_DB = {
-            'ধান': { 'মাজরা পোকা': ['ভায়াগো', 'বেল্ট এক্সপার্ট'], 'ব্লাস্ট রোগ': ['নাটিভো', 'এমিস্টার টপ'], 'টুংরো': ['টিডো'] },
+            'ধান': { 'মাজরা পোকা': ['ভায়াগো', 'বেল্ট এক্সপার্ট'], 'ব্লাস্ট রোগ': ['নাティブো', 'এমিস্টার টপ'], 'টুংরো': ['টিডো'] },
             'আলু': { 'লেইট ব্লাইট': ['রিডোমিল গোল্ড'], 'কাটুই পোকা': ['ফুরাডান'] },
-            'গম': { 'ব্লাস্ট': ['নাটিভো'], 'মরিচা রোগ': ['টিল্ট'] }
+            'গম': { 'ব্লাস্ট': ['নাティブো'], 'মরিচা রোগ': ['টিল্ট'] }
         };
 
         const cropImages = { 'ধান': 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?q=80&w=600', 'default': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600' };
         window.currentLand = null;
-        let isProcessing = false; // Spam prevention flag
+        let isProcessing = false;
 
         onAuthStateChanged(auth, (user) => {
             if (user) setupLands(user.uid);
@@ -153,29 +153,54 @@
             });
         }
 
-        // --- অর্ডার সেভ লজিক (Updated with Spam Protection) ---
+        // --- নতুন লজিক: অ্যাক্টিভ অর্ডার থাকলে নতুন অর্ডার নিবে না ---
         window.confirmWithPrism = async (type) => {
-            if (isProcessing) return; // আগেই ক্লিক করা থাকলে ফেরত যাবে
+            if (isProcessing) return;
 
             const btn = event.target.closest('button') || event.target;
             const originalHTML = btn.innerHTML;
-
-            // UI আপডেট: বাটন ডিজেবল ও লোডিং
-            isProcessing = true;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> প্রসেসিং...`;
-
             const { id, name, area, crop } = window.currentLand;
-            const orderData = {
-                landId: id,
-                landName: name,
-                serviceType: type,
-                status: 'PENDING',
-                timestamp: new Date().getTime(),
-                userId: auth.currentUser.uid
-            };
 
             try {
+                isProcessing = true;
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> চেক করা হচ্ছে...`;
+
+                // ১. অ্যাক্টিভ অর্ডার চেক করার কুইরি
+                const activeOrderQ = query(
+                    collection(db, "orders"), 
+                    where("landId", "==", id), 
+                    where("status", "in", ["PENDING", "PROCESSING"])
+                );
+                
+                const querySnapshot = await getDocs(activeOrderQ);
+
+                // ২. যদি অ্যাক্টিভ অর্ডার থাকে তবে অ্যালার্ট দিবে
+                if (!querySnapshot.empty) {
+                    document.getElementById('modalTitle').innerText = "অর্ডার সীমাবদ্ধ";
+                    document.getElementById('modalContent').innerHTML = `
+                        <div class="success-prism" style="border-color: #ff9800;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 50px; color:#ff9800; margin-bottom:15px; display:block;"></i>
+                            <h3 style="margin:0; color: #e65100;">অ্যাক্টিভ সার্ভিস চলমান!</h3>
+                            <p style="font-size:13px; color:#666; margin-top:10px;">
+                                আপনার এই জমিতে অলরেডি একটি কাজ চলছে। সেটি শেষ না হওয়া পর্যন্ত নতুন অর্ডার নেওয়া সম্ভব নয়।
+                            </p>
+                            <button class="action-btn" style="margin-top:20px; background:#ff9800;" onclick="closeModal()">ঠিক আছে</button>
+                        </div>`;
+                    return; // ফাংশন এখানেই শেষ
+                }
+
+                // ৩. কোনো অ্যাক্টিভ অর্ডার না থাকলে নতুন অর্ডার সেভ হবে
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> প্রসেসিং...`;
+                const orderData = {
+                    landId: id,
+                    landName: name,
+                    serviceType: type,
+                    status: 'PENDING',
+                    timestamp: new Date().getTime(),
+                    userId: auth.currentUser.uid
+                };
+
                 await addDoc(collection(db, "orders"), orderData);
                 document.getElementById('modalTitle').innerText = "স্ট্যাটাস";
                 document.getElementById('modalContent').innerHTML = `
@@ -185,15 +210,17 @@
                         <p style="font-size:13px; color:#666;">আপনার ${type} রিকোয়েস্টটি গ্রহণ করা হয়েছে।</p>
                         <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">ঠিক আছে</button>
                     </div>`;
+
             } catch (e) { 
                 alert("Error: " + e.message); 
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
             } finally {
-                isProcessing = false; // কাজ শেষ হলে ফ্লাগ রিসেট
+                isProcessing = false;
             }
         };
 
+        // বাকি ফাংশনগুলো অপরিবর্তিত রাখা হয়েছে
         window.openServiceMenu = (id, name, area, crop) => {
             window.currentLand = { id, name, area, crop };
             document.getElementById('modalTitle').innerText = "সার্ভিস নির্বাচন করুন";
