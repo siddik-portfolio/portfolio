@@ -235,6 +235,27 @@
                 } catch (e) { console.error(e); }
             }
         };
+        onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // এই নিচের লাইনগুলো আপনার কনসোলে সব সত্যি বলে দেবে
+        console.log("আপনার লগইন করা ইমেইল:", user.email);
+        console.log("কোডে দেওয়া অ্যাডমিন ইমেইল:", ALLOWED_ADMIN_EMAIL);
+        console.log("দুটো কি এক?", user.email.trim() === ALLOWED_ADMIN_EMAIL.trim());
+
+        if (user.email.trim() === ALLOWED_ADMIN_EMAIL.trim()) {
+            authOverlay.classList.add('hidden');
+            adminPanel.classList.remove('hidden-content');
+            // ... বাকি কোড
+        } else {
+            errorMsg.classList.remove('hidden');
+            console.log("ম্যাচ করেনি তাই লগআউট করে দেওয়া হচ্ছে...");
+            setTimeout(() => signOut(auth), 3000);
+        }
+    } else {
+        authOverlay.classList.remove('hidden');
+        adminPanel.classList.add('hidden-content');
+    }
+});
     </script>
 </body>
 </html>
