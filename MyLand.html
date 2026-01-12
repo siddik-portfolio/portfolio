@@ -30,10 +30,12 @@
 
         .action-btn { width: 100%; background: #222; color: white; border: none; padding: 14px; border-radius: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; margin-top: 15px; }
         .action-btn:hover { background: var(--primary); }
+        .action-btn:disabled { background: #ccc; cursor: not-allowed; }
 
         /* Modal & UI Elements */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
         .glass-card { background: var(--glass); border-radius: 35px; padding: 30px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); scrollbar-width: none; }
+        
         .service-option { width: 100%; padding: 20px; margin-bottom: 15px; border-radius: 22px; border: 1px solid #eee; background: white; cursor: pointer; display: flex; align-items: center; gap: 18px; transition: 0.3s; }
         .service-option:hover { transform: scale(1.02); border-color: var(--primary); }
         .service-icon { width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
@@ -87,6 +89,7 @@
 
         const cropImages = { 'ধান': 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?q=80&w=600', 'default': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600' };
         window.currentLand = null;
+        let isProcessing = false; // Spam prevention flag
 
         onAuthStateChanged(auth, (user) => {
             if (user) setupLands(user.uid);
@@ -109,7 +112,6 @@
             const crop = data.cropName || 'ধান';
             const moisture = data.moistureLevel || 40;
             
-            // কার্ড রেন্ডার করা
             const cardHtml = `
                 <div class="land-card">
                     <div class="card-banner">
@@ -128,9 +130,7 @@
                             <div class="info-item"><p>পাম্প</p><h4 class="${data.pumpStatus==='ON'?'pump-active':''}">${data.pumpStatus || 'OFF'}</h4></div>
                             <div class="info-item"><p>এলাকা</p><h4>${data.area} শতক</h4></div>
                         </div>
-
                         <div id="status-${id}" class="service-status-box">চলমান কোনো সার্ভিস নেই</div>
-
                         <button class="action-btn" onclick="openServiceMenu('${id}', '${data.name}', ${data.area}, '${crop}')">
                             <i class="fas fa-th-large"></i> সার্ভিস নিন
                         </button>
@@ -138,12 +138,10 @@
                 </div>`;
             container.innerHTML += cardHtml;
 
-            // এই কার্ডের জন্য আলাদা অর্ডার লিসেনার
             const orderQ = query(collection(db, "orders"), where("landId", "==", id), where("status", "in", ["PENDING", "PROCESSING"]));
             onSnapshot(orderQ, (orderSnaps) => {
                 const statusBox = document.getElementById(`status-${id}`);
                 if(!statusBox) return;
-
                 if(orderSnaps.empty) {
                     statusBox.innerHTML = "চলমান কোনো সার্ভিস নেই";
                     statusBox.className = "service-status-box";
@@ -155,8 +153,18 @@
             });
         }
 
-        // --- অর্ডার সেভ লজিক ---
+        // --- অর্ডার সেভ লজিক (Updated with Spam Protection) ---
         window.confirmWithPrism = async (type) => {
+            if (isProcessing) return; // আগেই ক্লিক করা থাকলে ফেরত যাবে
+
+            const btn = event.target.closest('button') || event.target;
+            const originalHTML = btn.innerHTML;
+
+            // UI আপডেট: বাটন ডিজেবল ও লোডিং
+            isProcessing = true;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> প্রসেসিং...`;
+
             const { id, name, area, crop } = window.currentLand;
             const orderData = {
                 landId: id,
@@ -177,10 +185,15 @@
                         <p style="font-size:13px; color:#666;">আপনার ${type} রিকোয়েস্টটি গ্রহণ করা হয়েছে।</p>
                         <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">ঠিক আছে</button>
                     </div>`;
-            } catch (e) { alert("Error: " + e.message); }
+            } catch (e) { 
+                alert("Error: " + e.message); 
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            } finally {
+                isProcessing = false; // কাজ শেষ হলে ফ্লাগ রিসেট
+            }
         };
 
-        // বাকি মেনু ফাংশনগুলো আগের মতোই আছে
         window.openServiceMenu = (id, name, area, crop) => {
             window.currentLand = { id, name, area, crop };
             document.getElementById('modalTitle').innerText = "সার্ভিস নির্বাচন করুন";
