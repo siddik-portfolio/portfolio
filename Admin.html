@@ -123,7 +123,7 @@
 
   <script type="module">
     import { db, auth } from './firebase-config.js';
-    import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, onSnapshot, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const ALLOWED_ADMIN_EMAIL = "sabsiddikf@gmail.com"; 
@@ -134,105 +134,87 @@
     const logoutBtn = document.getElementById('logoutBtn');
     const errorMsg = document.getElementById('errorMsg');
 
-    // --- অ্যাডভান্সড এরর ডিসপ্লে (Glassmorphism Card) ---
+    // সমস্যা দেখানোর কার্ড (Glassmorphism)
     function showProblemCard(title, message, icon = 'fa-exclamation-triangle') {
-        // পুরনো এরর মেসেজ মুছে নতুন কার্ড ডিজাইন করা
         errorMsg.innerHTML = `
-            <div class="mt-6 p-6 glass-panel border-red-500/50 bg-red-500/10 animate-bounce">
+            <div class="mt-6 p-6 glass-panel border-red-500/50 bg-red-500/10 animate-pulse">
                 <i class="fas ${icon} text-red-400 text-2xl mb-2"></i>
                 <h3 class="text-lg font-bold text-white">${title}</h3>
                 <p class="text-sm text-gray-300 mt-1">${message}</p>
-                <div class="mt-4 text-[10px] text-gray-400 uppercase tracking-widest">Error Debugger Active</div>
             </div>
         `;
         errorMsg.classList.remove('hidden');
-        setLoginLoading(false);
     }
 
     function setLoginLoading(isLoading) {
         if (isLoading) {
             loginBtn.disabled = true;
-            loginBtn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Checking Status...`;
-            loginBtn.classList.add('animate-pulse', 'opacity-70');
+            loginBtn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Opening Google...`;
+            loginBtn.classList.add('opacity-70');
         } else {
             loginBtn.disabled = false;
             loginBtn.innerHTML = `<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Sign in with Google`;
-            loginBtn.classList.remove('animate-pulse', 'opacity-70');
+            loginBtn.classList.remove('opacity-70');
         }
     }
 
-    // ১. লগইন শুরু
+    // ১. পপ-আপ লগইন লজিক (Pop-up Method)
     loginBtn.onclick = async () => {
         setLoginLoading(true);
         errorMsg.classList.add('hidden');
         const provider = new GoogleAuthProvider();
+        
         try {
-            await signInWithRedirect(auth, provider);
+            // signInWithPopup ব্যবহার করা হয়েছে
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            checkAdmin(user);
         } catch (error) {
-            showProblemCard("Connection Failed", error.message);
+            setLoginLoading(false);
+            if (error.code === 'auth/popup-blocked') {
+                showProblemCard("Popup Blocked", "Please allow popups for this site in your browser settings.");
+            } else if (error.code === 'auth/unauthorized-domain') {
+                showProblemCard("Domain Error", "This domain is not authorized in Firebase Console.");
+            } else {
+                showProblemCard("Login Failed", error.message);
+            }
         }
     };
 
-    // ২. লগআউট
-    logoutBtn.onclick = () => signOut(auth).then(() => window.location.reload());
+    // ২. অ্যাডমিন চেক ফাংশন
+    function checkAdmin(user) {
+        if (user) {
+            const userEmail = user.email.toLowerCase().trim();
+            const adminEmail = ALLOWED_ADMIN_EMAIL.toLowerCase().trim();
 
-    // ৩. মূল লজিক এবং প্রবলেম ডিটেক্টর
-    async function initAuth() {
-        try {
-            // রিডাইরেক্ট হয়ে আসার পর চেক
-            const result = await getRedirectResult(auth);
-            
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    const userEmail = user.email.toLowerCase().trim();
-                    const adminEmail = ALLOWED_ADMIN_EMAIL.toLowerCase().trim();
-
-                    console.log("Logged In User:", userEmail);
-
-                    if (userEmail === adminEmail) {
-                        // সবকিছু ঠিক থাকলে সরাসরি লগইন
-                        authOverlay.classList.add('hidden');
-                        adminPanel.classList.remove('hidden-content');
-                        document.getElementById('adminNameDisplay').innerText = user.displayName;
-                        document.getElementById('adminPhoto').src = user.photoURL;
-                        initOrderListener();
-                    } else {
-                        // যদি ইমেইল ম্যাচ না করে
-                        showProblemCard(
-                            "Identity Mismatch", 
-                            `You logged in with <b>${userEmail}</b>. This email is not in our Admin list.`,
-                            "fa-user-shield"
-                        );
-                        setTimeout(() => signOut(auth), 5000);
-                    }
-                } else {
-                    setLoginLoading(false);
-                    // যদি ব্রাউজার ডাটা ব্লক করে
-                    if (window.location.hash.includes('error')) {
-                        showProblemCard("Browser Blocked", "Your browser is blocking the login popup or cookies. Please enable third-party cookies.");
-                    }
-                }
-            });
-        } catch (error) {
-            // ফায়ারবেস এরর ডিটেকশন
-            let title = "Firebase Error";
-            let msg = error.message;
-
-            if (error.code === 'auth/unauthorized-domain') {
-                title = "Domain Not Authorized";
-                msg = "This website domain is not added to Firebase. Go to Auth > Settings > Authorized Domains.";
-            } else if (error.code === 'auth/network-request-failed') {
-                title = "Network Issue";
-                msg = "Please check your internet connection and try again.";
+            if (userEmail === adminEmail) {
+                authOverlay.classList.add('hidden');
+                adminPanel.classList.remove('hidden-content');
+                document.getElementById('adminNameDisplay').innerText = user.displayName;
+                document.getElementById('adminPhoto').src = user.photoURL;
+                initOrderListener();
+            } else {
+                showProblemCard("Access Denied", `<b>${userEmail}</b> is not an admin account.`, "fa-user-shield");
+                setTimeout(() => signOut(auth), 4000);
             }
-
-            showProblemCard(title, msg, "fa-server");
         }
     }
 
-    initAuth();
+    // ৩. সেশন চেক (পেজ রিফ্রেশ করলে যেন লগআউট না হয়ে যায়)
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            checkAdmin(user);
+        } else {
+            authOverlay.classList.remove('hidden');
+            adminPanel.classList.add('hidden-content');
+            setLoginLoading(false);
+        }
+    });
 
-    // ৪. ডাটা লিসেনার (অপরিবর্তিত)
+    // ৪. লগআউট
+    logoutBtn.onclick = () => signOut(auth);
+
+    // ৫. ডাটা লিসেনার (অপরিবর্তিত)
     function initOrderListener() {
         const q = query(collection(db, "orders"));
         onSnapshot(q, (snapshot) => {
@@ -249,8 +231,8 @@
                     <td class="py-4 text-sm">${order.landName || 'N/A'}</td>
                     <td class="py-4"><span class="px-2 py-1 rounded-full text-[10px] ${getStatusClass(order.status)}">${(order.status || 'pending').toUpperCase()}</span></td>
                     <td class="py-4 flex gap-2">
-                        <button onclick="updateOrderStatus('${id}', 'completed')" class="text-green-400 hover:scale-110 transition"><i class="fas fa-check"></i></button>
-                        <button onclick="deleteOrder('${id}')" class="text-red-400 hover:scale-110 transition"><i class="fas fa-trash"></i></button>
+                        <button onclick="updateOrderStatus('${id}', 'completed')" class="text-green-400 hover:scale-125 transition"><i class="fas fa-check"></i></button>
+                        <button onclick="deleteOrder('${id}')" class="text-red-400 hover:scale-125 transition"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
             });
@@ -262,9 +244,7 @@
     }
 
     function getStatusClass(s) {
-        if(s === 'completed') return 'bg-green-500/20 text-green-400';
-        if(s === 'processing') return 'bg-blue-500/20 text-blue-400';
-        return 'bg-yellow-500/20 text-yellow-400';
+        return s === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400';
     }
 
     window.updateOrderStatus = async (id, s) => await updateDoc(doc(db, "orders", id), { status: s });
