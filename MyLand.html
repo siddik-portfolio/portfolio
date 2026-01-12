@@ -23,9 +23,7 @@
         .card-banner img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
         
         /* STEP 1: Custom Crop Dropdown Style */
-        .crop-select-wrapper {
-            position: absolute; top: 12px; right: 12px; z-index: 10;
-        }
+        .crop-select-wrapper { position: absolute; top: 12px; right: 12px; z-index: 10; }
         .crop-select {
             appearance: none; -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
@@ -33,20 +31,17 @@
             border-radius: 30px; border: 1px solid rgba(255,255,255,0.8);
             font-size: 11px; font-weight: bold; cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); outline: none;
-            text-align: center; transition: 0.3s;
             background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232E7D32%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
             background-repeat: no-repeat; background-position: right 10px top 50%; background-size: 8px auto;
         }
-        .crop-select:hover { background-color: white; transform: scale(1.05); }
 
         .card-content { padding: 18px; }
-        .card-title { margin: 0; font-size: 18px; color: #2C3E50; font-weight: 700; text-transform: capitalize; }
+        .card-title { margin: 0; font-size: 18px; color: #2C3E50; font-weight: 700; }
         .area-info { font-size: 12px; color: #7F8C8D; margin: 6px 0 15px 0; display: flex; align-items: center; gap: 5px; }
 
         .moisture-container { 
             background: #F9FBF9; border-radius: 15px; padding: 12px; 
-            margin-bottom: 18px; display: flex; justify-content: space-around;
-            border: 1px solid #eee;
+            margin-bottom: 18px; display: flex; justify-content: space-around; border: 1px solid #eee;
         }
         .m-item { text-align: center; }
         .m-item p { margin: 0; font-size: 9px; color: #95a5a6; text-transform: uppercase; }
@@ -59,14 +54,13 @@
             display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px;
         }
         .order-btn:hover { background: var(--primary); }
-        
         .view-btn { 
             flex: 1; background: #f0f2f0; border: none; border-radius: 12px; 
-            cursor: pointer; transition: 0.3s; color: var(--primary); font-size: 16px;
+            cursor: pointer; color: var(--primary); font-size: 16px;
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* 3D POPUP (Updated for Step 2) */
+        /* Modal & Glassmorphism */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
@@ -74,72 +68,102 @@
         }
         .glass-card {
             background: rgba(255, 255, 255, 0.95); border-radius: 25px; padding: 25px;
-            width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.4); transform: perspective(1000px);
+            width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
         }
 
-        /* STEP 2: Service Grid Styles */
-        .service-grid {
-            display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px;
-        }
+        /* STEP 3: Smart Form Elements */
+        .service-grid, #drone-logic-form, #hal-logic-form { margin-top: 15px; }
         .service-option {
-            background: rgba(240, 242, 245, 0.6);
-            border: 1px solid rgba(0,0,0,0.05);
-            padding: 12px 15px; border-radius: 15px;
-            display: flex; align-items: center; gap: 15px;
-            cursor: pointer; transition: 0.3s; text-align: left;
+            background: rgba(240, 242, 245, 0.6); padding: 12px 15px; border-radius: 15px;
+            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s; margin-bottom: 10px;
         }
-        .service-option:hover {
-            background: var(--primary); color: white; transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.2);
+        .service-option:hover { background: var(--primary); color: white; }
+        
+        .smart-input {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd;
+            margin-bottom: 12px; font-size: 14px; outline: none; box-sizing: border-box;
         }
-        .service-icon {
-            width: 40px; height: 40px; background: rgba(255,255,255,0.8);
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            font-size: 18px; color: var(--primary); transition: 0.3s;
+        .info-box {
+            background: #e8f5e9; padding: 12px; border-radius: 10px; font-size: 12px;
+            color: #2e7d32; margin-bottom: 15px; text-align: left; line-height: 1.5;
         }
-        .service-option:hover .service-icon { background: rgba(255,255,255,0.2); color: white; }
-        .service-option h4 { margin: 0; font-size: 15px; font-weight: 600; }
-        .service-option p { margin: 2px 0 0; font-size: 11px; opacity: 0.8; }
+        .back-btn {
+            background: none; border: none; color: #7f8c8d; cursor: pointer; font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="land-list" class="land-grid">
-        </div>
+    <div id="land-list" class="land-grid"></div>
 
     <div id="serviceModal" class="modal-overlay" onclick="closeModal()">
         <div class="glass-card" onclick="event.stopPropagation()">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h3 style="margin:0; color: #2C3E50;">সার্ভিস নির্বাচন করুন</h3>
-                <i class="fas fa-times" onclick="closeModal()" style="cursor:pointer; color:#999; padding:5px;"></i>
+            <button id="modal-back-btn" class="back-btn" style="display:none;" onclick="showMainMenu()">
+                <i class="fas fa-arrow-left"></i> ফিরে যান
+            </button>
+
+            <div id="modal-header">
+                <h3 id="modal-title" style="margin:0; color: #2C3E50;">সার্ভিস নির্বাচন করুন</h3>
+                <p id="modal-desc" style="font-size: 12px; color: #7F8C8D; margin-top:5px;">আপনার জমির জন্য উপযুক্ত সেবাটি বেছে নিন:</p>
             </div>
-            <p style="font-size: 12px; color: #7F8C8D; text-align: left; margin-bottom:15px;">আপনার জমির জন্য উপযুক্ত সেবাটি বেছে নিন:</p>
 
-            <div class="service-grid">
-                <div class="service-option" onclick="selectService('drone')">
-                    <div class="service-icon"><i class="fas fa-helicopter"></i></div>
-                    <div>
-                        <h4>ড্রোন স্প্রে</h4>
-                        <p>সার ও কীটনাশক প্রয়োগ</p>
-                    </div>
+            <div id="main-service-menu" class="service-grid">
+                <div class="service-option" onclick="openDroneLogic()">
+                    <i class="fas fa-helicopter"></i>
+                    <div style="text-align:left; margin-left:10px;"><h4>ড্রোন স্প্রে</h4><p>সার ও কীটনাশক</p></div>
+                </div>
+                <div class="service-option" onclick="openHalLogic()">
+                    <i class="fas fa-tractor"></i>
+                    <div style="text-align:left; margin-left:10px;"><h4>স্মার্ট হালচাষ</h4><p>জমি তৈরি</p></div>
+                </div>
+                <div class="service-option" onclick="alert('Harvesting logic coming in Step 5!')">
+                    <i class="fas fa-wheat-awn"></i>
+                    <div style="text-align:left; margin-left:10px;"><h4>ফসল কাটা</h4><p>ফসল সংগ্রহ</p></div>
+                </div>
+            </div>
+
+            <div id="drone-logic-form" style="display:none;">
+                <select id="drone-type" class="smart-input" onchange="toggleDroneOptions()">
+                    <option value="">কি দিতে চান সিলেক্ট করুন</option>
+                    <option value="সার">সার (Fertilizer)</option>
+                    <option value="কীটনাশক">কীটনাশক (Pesticide)</option>
+                </select>
+
+                <div id="fertilizer-options" style="display:none;">
+                    <select id="crop-stage" class="smart-input" onchange="calculateFertilizer()">
+                        <option value="">ফসলের পর্যায়?</option>
+                        <option value="initial">শুরুর চারা গাছ</option>
+                        <option value="flowering">ফুল আসার সময়</option>
+                    </select>
                 </div>
 
-                <div class="service-option" onclick="selectService('plow')">
-                    <div class="service-icon"><i class="fas fa-tractor"></i></div>
-                    <div>
-                        <h4>স্মার্ট হালচাষ</h4>
-                        <p>আধুনিক মেশিনে জমি তৈরি</p>
-                    </div>
+                <div id="pesticide-options" style="display:none;">
+                    <select id="disease-type" class="smart-input" onchange="filterPesticides()">
+                        <option value="">রোগের নাম সিলেক্ট করুন</option>
+                        <option value="blast">ব্লাস্ট রোগ (Blast)</option>
+                        <option value="insect">পোকার আক্রমণ (Insects)</option>
+                    </select>
+                    <select id="pesticide-list" class="smart-input" style="display:none;">
+                        </select>
                 </div>
 
-                <div class="service-option" onclick="selectService('harvest')">
-                    <div class="service-icon"><i class="fas fa-wheat-awn"></i></div>
-                    <div>
-                        <h4>ফসল কাটা</h4>
-                        <p>দ্রুত ও নিরাপদে ফসল সংগ্রহ</p>
-                    </div>
-                </div>
+                <div id="logic-result" class="info-box" style="display:none;"></div>
+                
+                <button class="order-btn" style="width:100%;" onclick="alert('Order logic coming in Step 4!')">
+                    অর্ডার নিশ্চিত করুন
+                </button>
+            </div>
+
+            <div id="hal-logic-form" style="display:none;">
+                <select id="plow-count" class="smart-input">
+                    <option value="1">১ চাষ (Single Plow)</option>
+                    <option value="2">২ চাষ (Double Plow)</option>
+                </select>
+                <div class="info-box">ট্রাক্টর দিয়ে আধুনিক পদ্ধতিতে জমি চাষ করে দেওয়া হবে।</div>
+                <button class="order-btn" style="width:100%;" onclick="alert('Order logic coming in Step 4!')">
+                    চাষের অর্ডার দিন
+                </button>
             </div>
         </div>
     </div>
@@ -149,18 +173,13 @@
         import { collection, query, where, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // Step 1: Crop Images Mapping
         const cropImages = {
             'ধান': 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?q=80&w=600&auto=format&fit=crop',
             'গম': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=600&auto=format&fit=crop',
             'ভুট্টা': 'https://images.unsplash.com/photo-1551730459-92db2a308d6a?q=80&w=600&auto=format&fit=crop',
-            'আলু': 'https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?q=80&w=600&auto=format&fit=crop',
-            'সরিষা': 'https://plus.unsplash.com/premium_photo-1675715878235-866442651478?q=80&w=600&auto=format&fit=crop',
-            'সবজি': 'https://images.unsplash.com/photo-1595113316349-9fa4eb24f884?q=80&w=600&auto=format&fit=crop',
             'default': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=600&auto=format&fit=crop'
         };
 
-        // Variable to store selected land for Step 4
         window.currentSelectedLand = null;
 
         onAuthStateChanged(auth, (user) => {
@@ -168,77 +187,36 @@
             else window.parent.location.href = 'index.html';
         });
 
-        // Step 1: Update Crop Name
+        // Step 1 logic
         window.updateCropName = async (landId, newCrop) => {
-            try {
-                await updateDoc(doc(db, "lands", landId), { cropName: newCrop });
-                console.log("Crop updated to:", newCrop);
-            } catch (error) {
-                console.error("Error updating crop:", error);
-                alert("ফসল পরিবর্তন করা সম্ভব হয়নি।");
-            }
+            try { await updateDoc(doc(db, "lands", landId), { cropName: newCrop }); }
+            catch (e) { alert("Error!"); }
         };
 
         function setupRealtimeLands(uid) {
             const container = document.getElementById('land-list');
             const q = query(collection(db, "lands"), where("userId", "==", uid));
-
             onSnapshot(q, (snapshot) => {
                 container.innerHTML = "";
-                if (snapshot.empty) {
-                    container.innerHTML = "<p style='text-align:center; grid-column:1/-1; color:#888;'>কোনো জমি পাওয়া যায়নি।</p>";
-                    return;
-                }
-
                 snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const id = docSnap.id;
-                    const moisture = data.moistureLevel || Math.floor(Math.random() * 30) + 40;
-                    const cropType = data.cropName ? data.cropName.trim() : 'default';
-                    const imageUrl = cropImages[cropType] || cropImages['default'];
-
+                    const data = docSnap.data(); const id = docSnap.id;
+                    const cropType = data.cropName || 'default';
                     container.innerHTML += `
                         <div class="land-card">
                             <div class="card-banner">
-                                <img src="${imageUrl}" alt="${cropType}">
+                                <img src="${cropImages[cropType] || cropImages.default}">
                                 <div class="crop-select-wrapper">
                                     <select class="crop-select" onchange="updateCropName('${id}', this.value)">
                                         <option value="${cropType}" selected hidden>${cropType}</option>
-                                        <option value="ধান">ধান (Paddy)</option>
-                                        <option value="গম">গম (Wheat)</option>
-                                        <option value="ভুট্টা">ভুট্টা (Corn)</option>
-                                        <option value="আলু">আলু (Potato)</option>
-                                        <option value="সরিষা">সরিষা (Mustard)</option>
-                                        <option value="সবজি">সবজি (Veg)</option>
+                                        <option value="ধান">ধান</option><option value="গম">গম</option><option value="ভুট্টা">ভুট্টা</option>
                                     </select>
                                 </div>
                             </div>
-                            
                             <div class="card-content">
-                                <h3 class="card-title">${data.name || 'অজ্ঞাত জমি'}</h3>
-                                <div class="area-info">
-                                    <i class="fas fa-expand-alt" style="color:var(--primary)"></i> ${data.area || '0'} শতাংশ এলাকা
-                                </div>
-
-                                <div class="moisture-container">
-                                    <div class="m-item">
-                                        <p>আর্দ্রতা</p>
-                                        <h4 style="color: ${moisture < 35 ? '#e74c3c' : '#2ecc71'}">${moisture}%</h4>
-                                    </div>
-                                    <div style="width:1px; background:#eee;"></div>
-                                    <div class="m-item">
-                                        <p>অবস্থা</p>
-                                        <h4 style="font-size:12px;">${moisture < 35 ? 'পানি দিন' : 'স্বাভাবিক'}</h4>
-                                    </div>
-                                </div>
-
+                                <h3 class="card-title">${data.name}</h3>
+                                <p class="area-info"><i class="fas fa-expand-alt"></i> ${data.area} শতাংশ</p>
                                 <div class="btn-flex">
-                                    <button class="order-btn" onclick="openServiceModal('${id}', '${data.name}')">
-                                        <i class="fas fa-paper-plane"></i> সার্ভিস নিন
-                                    </button>
-                                    <button class="view-btn" onclick="window.parent.location.href='Map.html?id=${id}'">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                    </button>
+                                    <button class="order-btn" onclick="openServiceModal('${id}', '${data.name}', ${data.area})">সার্ভিস নিন</button>
                                 </div>
                             </div>
                         </div>`;
@@ -246,21 +224,69 @@
             });
         }
 
-        // STEP 2: Modal Functions
-        window.openServiceModal = function(landId, landName) {
-            window.currentSelectedLand = { id: landId, name: landName };
+        // STEP 2 & 3: UI & Logic Functions
+        window.openServiceModal = (id, name, area) => {
+            window.currentSelectedLand = { id, name, area };
+            showMainMenu();
             document.getElementById('serviceModal').style.display = 'flex';
-        }
+        };
 
-        window.closeModal = function() {
-            document.getElementById('serviceModal').style.display = 'none';
-        }
+        window.showMainMenu = () => {
+            document.getElementById('main-service-menu').style.display = 'block';
+            document.getElementById('drone-logic-form').style.display = 'none';
+            document.getElementById('hal-logic-form').style.display = 'none';
+            document.getElementById('modal-back-btn').style.display = 'none';
+            document.getElementById('modal-title').innerText = "সার্ভিস নির্বাচন করুন";
+        };
 
-        window.selectService = function(type) {
-            console.log("Selected:", type, "for", window.currentSelectedLand);
-            // This is just a placeholder for Step 3
-            alert('Step 3 Loading: ' + type.toUpperCase() + ' logic coming next!');
-        }
+        window.openDroneLogic = () => {
+            document.getElementById('main-service-menu').style.display = 'none';
+            document.getElementById('drone-logic-form').style.display = 'block';
+            document.getElementById('modal-back-btn').style.display = 'flex';
+            document.getElementById('modal-title').innerText = "ড্রোন সার্ভিস লজিক";
+        };
+
+        window.openHalLogic = () => {
+            document.getElementById('main-service-menu').style.display = 'none';
+            document.getElementById('hal-logic-form').style.display = 'block';
+            document.getElementById('modal-back-btn').style.display = 'flex';
+            document.getElementById('modal-title').innerText = "হালচাষ নির্বাচন";
+        };
+
+        window.toggleDroneOptions = () => {
+            const val = document.getElementById('drone-type').value;
+            document.getElementById('fertilizer-options').style.display = val === 'সার' ? 'block' : 'none';
+            document.getElementById('pesticide-options').style.display = val === 'কীটনাশক' ? 'block' : 'none';
+            document.getElementById('logic-result').style.display = 'none';
+        };
+
+        window.calculateFertilizer = () => {
+            const stage = document.getElementById('crop-stage').value;
+            const area = window.currentSelectedLand.area;
+            let msg = "";
+            if(stage === 'initial') msg = `আপনার ${area} শতাংশ জমির চারা বৃদ্ধিতে ইউরিয়া সার প্রয়োজন প্রায় ${area * 0.5} কেজি।`;
+            else if(stage === 'flowering') msg = `ফুল আসার সময় পটাশ ও দস্তা সার প্রয়োজন প্রায় ${area * 0.3} কেজি।`;
+            
+            const resultBox = document.getElementById('logic-result');
+            resultBox.innerHTML = `<strong>পরামর্শ:</strong><br>${msg}`;
+            resultBox.style.display = 'block';
+        };
+
+        window.filterPesticides = () => {
+            const disease = document.getElementById('disease-type').value;
+            const list = document.getElementById('pesticide-list');
+            list.innerHTML = "";
+            let options = [];
+            if(disease === 'blast') options = ["Natigo 75WG", "Amistar Top"];
+            else if(disease === 'insect') options = ["Virtako", "Sobicron"];
+            
+            options.forEach(opt => {
+                list.innerHTML += `<option value="${opt}">${opt}</option>`;
+            });
+            list.style.display = 'block';
+        };
+
+        window.closeModal = () => document.getElementById('serviceModal').style.display = 'none';
     </script>
 </body>
 </html>
