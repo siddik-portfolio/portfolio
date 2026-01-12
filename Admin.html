@@ -123,11 +123,12 @@
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // signInWithRedirect এবং getRedirectResult যোগ করা হয়েছে পপ-আপ সমস্যা সমাধানের জন্য
+        import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { collection, query, onSnapshot, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // --- সেফটি সেটিংস ---
-        const ALLOWED_ADMIN_EMAIL = "your-email@gmail.com"; // এখানে আপনার ইমেইল দিন
+        const ALLOWED_ADMIN_EMAIL = "sabsiddikf@gmail.com"; 
 
         const authOverlay = document.getElementById('authOverlay');
         const adminPanel = document.getElementById('adminPanel');
@@ -135,15 +136,21 @@
         const logoutBtn = document.getElementById('logoutBtn');
         const errorMsg = document.getElementById('errorMsg');
 
-        // ১. লগইন লজিক
+        // ১. লগইন লজিক (Redirect পদ্ধতি ব্যবহার করা হয়েছে)
         loginBtn.onclick = async () => {
             const provider = new GoogleAuthProvider();
             try {
-                await signInWithPopup(auth, provider);
+                // পপ-আপের বদলে সরাসরি রিডাইরেক্ট হবে
+                await signInWithRedirect(auth, provider);
             } catch (error) {
                 alert("Login Error: " + error.message);
             }
         };
+
+        // লগইনের পর ফলাফল চেক করা
+        getRedirectResult(auth).catch((error) => {
+            console.error("Redirect Error:", error);
+        });
 
         // ২. লগআউট লজিক
         logoutBtn.onclick = () => signOut(auth);
@@ -155,7 +162,7 @@
                 adminPanel.classList.remove('hidden-content');
                 document.getElementById('adminNameDisplay').innerText = user.displayName;
                 document.getElementById('adminPhoto').src = user.photoURL;
-                initOrderListener(); // ডাটা রিড করা শুরু
+                initOrderListener(); 
             } else if (user) {
                 errorMsg.classList.remove('hidden');
                 setTimeout(() => signOut(auth), 2000);
@@ -165,7 +172,7 @@
             }
         });
 
-        // ৪. রিয়েল-টাইম ডাটা লিসেনার (আপনার আগের লজিক)
+        // ৪. রিয়েল-টাইম ডাটা লিসেনার
         function initOrderListener() {
             const q = query(collection(db, "orders"));
             onSnapshot(q, (snapshot) => {
@@ -189,7 +196,7 @@
                             <td class="py-4 text-sm text-gray-200">${order.landName || 'Not Specified'}</td>
                             <td class="py-4">
                                 <span class="px-3 py-1 rounded-full text-xs ${getStatusClass(order.status)}">
-                                    ${order.status.toUpperCase()}
+                                    ${order.status ? order.status.toUpperCase() : 'PENDING'}
                                 </span>
                             </td>
                             <td class="py-4 text-center">
@@ -208,7 +215,6 @@
             });
         }
 
-        // আপনার আগের হেল্পার ফাংশনগুলো
         function getStatusClass(status) {
             if(status === 'pending') return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
             if(status === 'processing') return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
@@ -217,11 +223,17 @@
         }
 
         window.updateOrderStatus = async (id, newStatus) => {
-            await updateDoc(doc(db, "orders", id), { status: newStatus });
+            try {
+                await updateDoc(doc(db, "orders", id), { status: newStatus });
+            } catch (e) { console.error(e); }
         };
 
         window.deleteOrder = async (id) => {
-            if(confirm('Cancel order?')) await deleteDoc(doc(db, "orders", id));
+            if(confirm('Cancel order?')) {
+                try {
+                    await deleteDoc(doc(db, "orders", id));
+                } catch (e) { console.error(e); }
+            }
         };
     </script>
 </body>
