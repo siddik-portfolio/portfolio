@@ -134,123 +134,141 @@
     const logoutBtn = document.getElementById('logoutBtn');
     const errorMsg = document.getElementById('errorMsg');
 
-    // ১. লগইন লজিক
+    // --- অ্যাডভান্সড এরর ডিসপ্লে (Glassmorphism Card) ---
+    function showProblemCard(title, message, icon = 'fa-exclamation-triangle') {
+        // পুরনো এরর মেসেজ মুছে নতুন কার্ড ডিজাইন করা
+        errorMsg.innerHTML = `
+            <div class="mt-6 p-6 glass-panel border-red-500/50 bg-red-500/10 animate-bounce">
+                <i class="fas ${icon} text-red-400 text-2xl mb-2"></i>
+                <h3 class="text-lg font-bold text-white">${title}</h3>
+                <p class="text-sm text-gray-300 mt-1">${message}</p>
+                <div class="mt-4 text-[10px] text-gray-400 uppercase tracking-widest">Error Debugger Active</div>
+            </div>
+        `;
+        errorMsg.classList.remove('hidden');
+        setLoginLoading(false);
+    }
+
+    function setLoginLoading(isLoading) {
+        if (isLoading) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Checking Status...`;
+            loginBtn.classList.add('animate-pulse', 'opacity-70');
+        } else {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = `<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Sign in with Google`;
+            loginBtn.classList.remove('animate-pulse', 'opacity-70');
+        }
+    }
+
+    // ১. লগইন শুরু
     loginBtn.onclick = async () => {
+        setLoginLoading(true);
+        errorMsg.classList.add('hidden');
         const provider = new GoogleAuthProvider();
         try {
             await signInWithRedirect(auth, provider);
         } catch (error) {
-            alert("Login Error: " + error.message);
+            showProblemCard("Connection Failed", error.message);
         }
     };
 
-    // ২. লগআউট লজিক
-    logoutBtn.onclick = async () => {
-        await signOut(auth);
-        window.location.reload(); // ক্লিন লগআউট
-    };
+    // ২. লগআউট
+    logoutBtn.onclick = () => signOut(auth).then(() => window.location.reload());
 
-    // ৩. রিডাইরেক্ট হ্যান্ডলিং এবং অথেনটিকেশন চেক
-    async function checkAuth() {
+    // ৩. মূল লজিক এবং প্রবলেম ডিটেক্টর
+    async function initAuth() {
         try {
-            // রিডাইরেক্ট হয়ে ফিরে আসার পর ডাটা ধরা
-            await getRedirectResult(auth);
+            // রিডাইরেক্ট হয়ে আসার পর চেক
+            const result = await getRedirectResult(auth);
             
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     const userEmail = user.email.toLowerCase().trim();
                     const adminEmail = ALLOWED_ADMIN_EMAIL.toLowerCase().trim();
 
+                    console.log("Logged In User:", userEmail);
+
                     if (userEmail === adminEmail) {
-                        // সাকসেসফুল অ্যাডমিন লগইন
+                        // সবকিছু ঠিক থাকলে সরাসরি লগইন
                         authOverlay.classList.add('hidden');
                         adminPanel.classList.remove('hidden-content');
                         document.getElementById('adminNameDisplay').innerText = user.displayName;
                         document.getElementById('adminPhoto').src = user.photoURL;
-                        initOrderListener(); 
+                        initOrderListener();
                     } else {
-                        // ভুল ইমেইল হলে
-                        errorMsg.innerText = "Access Denied: You are not an Admin!";
-                        errorMsg.classList.remove('hidden');
-                        setTimeout(() => signOut(auth), 3000);
+                        // যদি ইমেইল ম্যাচ না করে
+                        showProblemCard(
+                            "Identity Mismatch", 
+                            `You logged in with <b>${userEmail}</b>. This email is not in our Admin list.`,
+                            "fa-user-shield"
+                        );
+                        setTimeout(() => signOut(auth), 5000);
                     }
                 } else {
-                    // লগইন নেই
-                    authOverlay.classList.remove('hidden');
-                    adminPanel.classList.add('hidden-content');
+                    setLoginLoading(false);
+                    // যদি ব্রাউজার ডাটা ব্লক করে
+                    if (window.location.hash.includes('error')) {
+                        showProblemCard("Browser Blocked", "Your browser is blocking the login popup or cookies. Please enable third-party cookies.");
+                    }
                 }
             });
         } catch (error) {
-            console.error("Auth Error:", error);
+            // ফায়ারবেস এরর ডিটেকশন
+            let title = "Firebase Error";
+            let msg = error.message;
+
+            if (error.code === 'auth/unauthorized-domain') {
+                title = "Domain Not Authorized";
+                msg = "This website domain is not added to Firebase. Go to Auth > Settings > Authorized Domains.";
+            } else if (error.code === 'auth/network-request-failed') {
+                title = "Network Issue";
+                msg = "Please check your internet connection and try again.";
+            }
+
+            showProblemCard(title, msg, "fa-server");
         }
     }
 
-    // পেজ লোড হলে চেক শুরু হবে
-    checkAuth();
+    initAuth();
 
-    // ৪. রিয়েল-টাইম ডাটা লিসেনার
+    // ৪. ডাটা লিসেনার (অপরিবর্তিত)
     function initOrderListener() {
         const q = query(collection(db, "orders"));
         onSnapshot(q, (snapshot) => {
             let content = "";
-            let pendingCount = 0;
-            let completedCount = 0;
-            
+            let pending = 0, completed = 0;
             snapshot.forEach((orderDoc) => {
                 const order = orderDoc.data();
                 const id = orderDoc.id;
-                if(order.status === 'pending') pendingCount++;
-                if(order.status === 'completed') completedCount++;
-
-                content += `
-                    <tr class="order-card">
-                        <td class="py-4">
-                            <p class="font-semibold">${order.userName || 'Anonymous'}</p>
-                            <p class="text-xs text-gray-400">UID: ${order.userId ? order.userId.substring(0,8) : 'N/A'}...</p>
-                        </td>
-                        <td class="py-4 font-medium text-blue-300">${order.serviceType}</td>
-                        <td class="py-4 text-sm text-gray-200">${order.landName || 'Not Specified'}</td>
-                        <td class="py-4">
-                            <span class="px-3 py-1 rounded-full text-xs ${getStatusClass(order.status)}">
-                                ${order.status ? order.status.toUpperCase() : 'PENDING'}
-                            </span>
-                        </td>
-                        <td class="py-4 text-center">
-                            <div class="flex justify-center gap-2">
-                                <button onclick="updateOrderStatus('${id}', 'processing')" class="p-2 hover:bg-yellow-500/20 text-yellow-400" title="Processing"><i class="fas fa-spinner"></i></button>
-                                <button onclick="updateOrderStatus('${id}', 'completed')" class="p-2 hover:bg-green-500/20 text-green-400" title="Complete"><i class="fas fa-check"></i></button>
-                                <button onclick="deleteOrder('${id}')" class="p-2 hover:bg-red-500/20 text-red-400" title="Delete"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
+                if(order.status === 'pending') pending++;
+                if(order.status === 'completed') completed++;
+                content += `<tr class="border-b border-white/5">
+                    <td class="py-4 font-semibold">${order.userName || 'User'}</td>
+                    <td class="py-4 text-blue-300">${order.serviceType}</td>
+                    <td class="py-4 text-sm">${order.landName || 'N/A'}</td>
+                    <td class="py-4"><span class="px-2 py-1 rounded-full text-[10px] ${getStatusClass(order.status)}">${(order.status || 'pending').toUpperCase()}</span></td>
+                    <td class="py-4 flex gap-2">
+                        <button onclick="updateOrderStatus('${id}', 'completed')" class="text-green-400 hover:scale-110 transition"><i class="fas fa-check"></i></button>
+                        <button onclick="deleteOrder('${id}')" class="text-red-400 hover:scale-110 transition"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
             });
             document.getElementById('orderTableBody').innerHTML = content;
             document.getElementById('totalOrdersCount').innerText = snapshot.size;
-            document.getElementById('pendingOrdersCount').innerText = pendingCount;
-            document.getElementById('completedOrdersCount').innerText = completedCount;
+            document.getElementById('pendingOrdersCount').innerText = pending;
+            document.getElementById('completedOrdersCount').innerText = completed;
         });
     }
 
-    function getStatusClass(status) {
-        if(status === 'pending') return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-        if(status === 'processing') return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
-        if(status === 'completed') return 'bg-green-500/20 text-green-400 border border-green-500/30';
-        return 'bg-gray-500/20 text-gray-400';
+    function getStatusClass(s) {
+        if(s === 'completed') return 'bg-green-500/20 text-green-400';
+        if(s === 'processing') return 'bg-blue-500/20 text-blue-400';
+        return 'bg-yellow-500/20 text-yellow-400';
     }
 
-    window.updateOrderStatus = async (id, newStatus) => {
-        try {
-            await updateDoc(doc(db, "orders", id), { status: newStatus });
-        } catch (e) { console.error(e); }
-    };
-
-    window.deleteOrder = async (id) => {
-        if(confirm('Cancel order?')) {
-            try {
-                await deleteDoc(doc(db, "orders", id));
-            } catch (e) { console.error(e); }
-        }
-    };
+    window.updateOrderStatus = async (id, s) => await updateDoc(doc(db, "orders", id), { status: s });
+    window.deleteOrder = async (id) => confirm('Delete?') && await deleteDoc(doc(db, "orders", id));
 </script>
 </body>
 </html>
